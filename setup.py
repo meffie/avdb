@@ -1,8 +1,9 @@
 from setuptools import setup
+execfile('avdb/__version__.py')
 
 setup(
     name='avdb',
-    version='0.0.1',
+    version=VERSION,
     description='AFS Version Database',
     author='Michael Meffie',
     author_email='mmeffie@sinenomine.net',

@@ -37,7 +37,8 @@ reports.
 @subcommand()
 def version(args):
     """Print the version number and exit"""
-    print "version"
+    from avdb import __version__
+    print __version__
     return 0
 
 @subcommand()

@@ -14,6 +14,9 @@ help:
 	@echo "  remove       - uninstall package"
 	@echo "  clean        - remove generated files"
 
+avdb/__version__.py:
+	echo "VERSION = '$$(git describe --tags | sed 's/^v//')'" > avdb/__version__.py
+
 lint:
 	pyflakes avdb/*.py
 
@@ -22,21 +25,21 @@ test:
 
 package: sdist wheel
 
-sdist:
+sdist: avdb/__version__.py
 	python setup.py sdist
 
-wheel:
+wheel: avdb/__version__.py
 	python setup.py bdist_wheel
 
-install:
+install: avdb/__version__.py
 	pip install --upgrade --no-deps --no-index .
 
-install-user:
+install-user: avdb/__version__.py
 	pip install --user --upgrade --no-deps --no-index .
 
 remove:
 	pip uninstall -y avdb
 
 clean:
-	-rm -f *.pyc test/*.pyc avdb/*.pyc
+	-rm -f *.pyc test/*.pyc avdb/*.pyc avdb/__version__.py
 	-rm -fr avdb.egg-info/ build/ dist/ MANIFEST
