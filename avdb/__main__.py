@@ -21,43 +21,7 @@
 """AFS version database cli"""
 
 import sys
-import argparse
-
-root = argparse.ArgumentParser(description="afs version database")
-parent = root.add_subparsers(dest='subcommand')
-
-def subcommand(*args):
-    """Decorator to declare command line subcommands."""
-    def decorator(function):
-        name = function.__name__.strip('_')
-        desc = function.__doc__
-        parser = parent.add_parser(name, description=desc)
-        if name not in ('help', 'version'):
-            parser.add_argument("-v", "--verbose", help="print more messages")
-            parser.add_argument("-q", "--quiet", help="print less messages")
-        for arg in args:
-            name_or_flags,options = arg
-            parser.add_argument(*name_or_flags, **options)
-        parser.set_defaults(function=function)
-    return decorator
-
-def argument(*name_or_flags, **options):
-    """Helper to declare subcommand arguments."""
-    # Pass the same args as the argparse add_arguments() method.
-    return (name_or_flags, options)
-
-@subcommand(
-    argument("host", metavar="<host>", help="example postional option"),
-    argument("--filename", "-f", help="example optional flag"),
-    argument("--output", default="example", help="example option"),
-    )
-def example(args):
-    """example subcommand"""
-    print "example"
-    print args.host
-    print args.filename
-    print args.output
-    return 0
+from avdb.subcmd import subcommand, argument, summary, dispatch
 
 @subcommand()
 def help(args):
@@ -67,9 +31,7 @@ def help(args):
 Scan public AFS servers and clients for version information and generate
 reports.
 """
-    print "commands:"
-    for name,parser in parent.choices.items():
-        print "  %-12s %s" % (name, parser.description)
+    summary()
     return 0
 
 @subcommand()
@@ -83,7 +45,9 @@ def init(args):
     """describe init here"""
     return 0
 
-@subcommand()
+@subcommand(
+    argument('--cell', help="todo"),
+    )
 def add(args):
     """describe add here"""
     return 0
@@ -94,7 +58,7 @@ def remove(args):
     return 0
 
 @subcommand()
-def import_(args): #  Trailing underscore to avoid reserved name.
+def import__(args): # Trailing underscores to avoid reserved name 'import'.
     """describe import here"""
     return 0
 
@@ -109,8 +73,7 @@ def report(args):
     return 0
 
 def main():
-    args = root.parse_args()
-    return args.function(args)
+    return dispatch()
 
 if __name__ == '__main__':
     sys.exit(main())
