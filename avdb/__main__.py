@@ -22,6 +22,7 @@
 
 import sys
 from avdb.subcmd import subcommand, argument, summary, dispatch
+from avdb.model import init_db, Session, Cell
 
 @subcommand()
 def help(args):
@@ -43,19 +44,33 @@ def version(args):
 
 @subcommand()
 def init(args):
-    """describe init here"""
+    """Create database tables"""
+    init_db()
     return 0
 
 @subcommand(
-    argument('--cell', help="todo"),
+    argument('cell', help="cell name"),
+    argument('host', nargs="+", help="database address"),
     )
 def add(args):
-    """describe add here"""
+    """Add a cell"""
+    init_db()
+    session = Session()
+    Cell.add(session, args.cell, args.host)
+    session.commit()
     return 0
 
 @subcommand()
-def remove(args):
-    """describe remove here"""
+def edit(args):
+    """Change cell info"""
+    return 0
+
+@subcommand()
+def list(args):
+    """List cells"""
+    init_db()
+    session = Session()
+    print Cell.list(session)
     return 0
 
 @subcommand()
