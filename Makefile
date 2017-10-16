@@ -11,6 +11,7 @@ help:
 	@echo "  wheel        - create wheel distribution file"
 	@echo "  install      - install package, global (requires root)"
 	@echo "  install-user - install package, user"
+	@echo "  install-dev  - install package, development"
 	@echo "  remove       - uninstall package"
 	@echo "  clean        - remove generated files"
 
@@ -32,10 +33,13 @@ wheel: avdb/__version__.py
 	python setup.py bdist_wheel
 
 install: avdb/__version__.py
-	pip install --upgrade --no-deps --no-index .
+	pip install --upgrade --no-index .
 
 install-user: avdb/__version__.py
-	pip install --user --upgrade --no-deps --no-index .
+	pip install --user --upgrade --no-index .
+
+install-dev: avdb/__version__.py
+	pip install --user -e .
 
 remove:
 	pip uninstall -y avdb

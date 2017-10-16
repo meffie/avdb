@@ -22,7 +22,8 @@
 
 import sys
 from avdb.subcmd import subcommand, argument, summary, dispatch
-from avdb.model import init_db, Session, Cell
+from avdb.model import init_db, Session, Cell, Host
+import avdb.csdb
 
 @subcommand()
 def help(args):
@@ -56,7 +57,9 @@ def add(args):
     """Add a cell"""
     init_db()
     session = Session()
-    Cell.add(session, args.cell, args.host)
+    cell = Cell.add(session, name=args.cell)
+    for host in args.host:
+        Host.add(session, cell, address=host)
     session.commit()
     return 0
 
@@ -73,9 +76,22 @@ def list(args):
     print Cell.list(session)
     return 0
 
-@subcommand()
+@subcommand(
+    argument('csdb', nargs='+', help="url or path to CellServDB file")
+    )
 def import__(args): # Trailing underscores to avoid reserved name 'import'.
     """describe import here"""
+    init_db()
+    session = Session()
+    text = []
+    for path in args.csdb:
+        text.append(avdb.csdb.readfile(path))
+    cells = avdb.csdb.parse("".join(text))
+    for cellname,cellinfo in cells.items():
+        cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
+        for host in cellinfo['hosts']:
+            Host.add(session, cell=cell, address=host[0], name=host[1])
+    session.commit()
     return 0
 
 @subcommand()

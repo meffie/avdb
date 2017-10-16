@@ -39,27 +39,28 @@ class Cell(Base):
     __tablename__ = 'cell'
     id = Column(Integer, primary_key=True)
     name = Column(String(255), unique=True)
-    desc = Column(String(255))
+    desc = Column(String(255), default='')
     active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
 
     def __repr__(self):
-        return "<Cell(id=%d, name='%s', active=%d, added='%s')>" % \
-               (self.id, self.name, self.active, self.added)
+        return "<Cell(id=%d, name='%s', desc='%s', active=%d, added='%s')>" % \
+               (self.id, self.name, self.desc, self.active, self.added)
 
     @staticmethod
-    def add(session, name, addresses):
+    def add(session, name, **kwargs):
         cell = session.query(Cell).filter_by(name=name).first()
         if cell is None:
-            cell = Cell(name=name)
+            cell = Cell(name=name, **kwargs)
             session.add(cell)
-        for address in addresses:
-            Host.add(session, cell, address)
         return cell
 
     @staticmethod
     def list(session):
-        return session.query(Cell).filter_by(active=1).all()
+        return session.query(Cell, Host) \
+            .filter(Cell.active == 1) \
+            .filter(Cell.id == Host.cell_id) \
+            .all()
 
 class Host(Base):
     __tablename__ = 'host'

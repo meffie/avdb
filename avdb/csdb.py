@@ -24,8 +24,9 @@
 import re
 import urllib2
 from collections import OrderedDict
+from pprint import pformat
 
-def readfile(path='https://grand.central.org/dl/cellservdb/CellServDB'):
+def readfile(path):
     """Read a CellServDB file from a url or local path."""
     if path.startswith('https://') or path.startswith('http://'):
         response = urllib2.urlopen(path)
@@ -61,7 +62,7 @@ def parse(text):
             if name:
                 cells[name] = {'desc':desc, 'hosts':hosts}
             name = m.group(1)
-            desc = m.group(2)
+            desc = pformat(m.group(2)).strip("'") # Flatten descriptions to ascii.
             hosts = []
             continue # start of entry
         m = re.match('(\d+\.\d+\.\d+\.\d+)\s+#(.*)\s*$', line)
@@ -72,3 +73,4 @@ def parse(text):
     if name:
         cells[name] = {'desc':desc, 'hosts':hosts}
     return cells
+
