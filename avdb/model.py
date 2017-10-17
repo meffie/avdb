@@ -155,15 +155,22 @@ if __name__ == "__main__":
     init_db()
     session = Session()
 
-    cell = Cell.add(session, name='example.edu')
+    # example cell
+    cell = Cell.add(session, name='example.edu', desc='example cell')
     for address in ('1.1.1.1', '2.2.2.2', '3.3.3.3'):
         host = Host.add(session, cell, address=address)
         for service in ('ptserver', 'vlserver'):
             node = Node.add(session, host, name=service)
             for version in ('1.0.0', '1.1.0'):
                 Version.add(session, node, version=version)
-    Cell.add(session, name='bogus.com', active=0)
+    host = Host.add(session, cell, address='0.0.0.0', name='old', active=0)
+    Node.add(session, host, name='old')
     session.commit()
+
+    # add an inactive cell
+    host = Cell.add(session, name='bogus.com', desc='inactive cell', active=0)
+    host = Host.add(session, cell, address='255.255.255.255', name='deadbeef', active=0)
+    Node.add(session, host, name='beefface')
 
     print "dump tables:"
     pprint(Cell.cells(session, all=True).all()); print ""
@@ -187,3 +194,19 @@ if __name__ == "__main__":
     pprint([node,node.versions])
     Version.add(session, node=node, version='1.2.0')
     session.commit()
+    print ""
+
+    print "list nodes"
+    for node in session.query(Node):
+        if node.host.active and node.host.cell.active:
+            print "node"
+            pprint(node)
+            pprint(node.host)
+            pprint(node.host.cell)
+            print ""
+        else:
+            print "inactive node"
+            pprint(node)
+            pprint(node.host)
+            pprint(node.host.cell)
+            print ""
