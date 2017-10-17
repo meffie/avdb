@@ -104,6 +104,7 @@ class Node(Base):
     id = Column(Integer, primary_key=True)
     host_id = Column(Integer, ForeignKey('host.id'))
     name = Column(String(255))
+    port = Column(Integer, default=0)
     active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
     versions = relationship('Version', backref='node')
@@ -159,8 +160,8 @@ if __name__ == "__main__":
     cell = Cell.add(session, name='example.edu', desc='example cell')
     for address in ('1.1.1.1', '2.2.2.2', '3.3.3.3'):
         host = Host.add(session, cell, address=address)
-        for service in ('ptserver', 'vlserver'):
-            node = Node.add(session, host, name=service)
+        for name,port in [('ptserver',7002), ('vlserver',7003)]:
+            node = Node.add(session, host, name=name, port=port)
             for version in ('1.0.0', '1.1.0'):
                 Version.add(session, node, version=version)
     host = Host.add(session, cell, address='0.0.0.0', name='old', active=0)
@@ -168,9 +169,10 @@ if __name__ == "__main__":
     session.commit()
 
     # add an inactive cell
-    host = Cell.add(session, name='bogus.com', desc='inactive cell', active=0)
+    cell = Cell.add(session, name='bogus.com', desc='inactive cell', active=0)
     host = Host.add(session, cell, address='255.255.255.255', name='deadbeef', active=0)
     Node.add(session, host, name='beefface')
+    session.commit()
 
     print "dump tables:"
     pprint(Cell.cells(session, all=True).all()); print ""
