@@ -30,8 +30,8 @@ def help(args):
     """Display help message"""
     print """avdb [command] [options]
 
-Scan public AFS servers and clients for version information and generate
-reports.
+Scan public AFS servers for version information
+and generate reports.
 """
     summary()
     return 0
@@ -64,7 +64,7 @@ def add(args):
 
 @subcommand()
 def edit(args):
-    """Change cell info"""
+    """Change cell info (not implemented)"""
     return 0
 
 @subcommand(
@@ -81,7 +81,7 @@ def list(args):
 @subcommand(
     argument('csdb', nargs='+', help="url or path to CellServDB file"))
 def import__(args): # Trailing underscores to avoid reserved name 'import'.
-    """describe import here"""
+    """Import cell info from CellServDB files"""
     init_db()
     session = Session()
     text = []
@@ -97,7 +97,7 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
 
 @subcommand()
 def scan(args):
-    """Scan for versions"""
+    """Scan for versions (not implemented)"""
     init_db()
     session = Session()
     for node in session.query(Node):
@@ -107,7 +107,7 @@ def scan(args):
 
 @subcommand()
 def report(args):
-    """describe report here"""
+    """Generate version report (not implemented)"""
     return 0
 
 def main():
