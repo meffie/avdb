@@ -21,9 +21,9 @@
 """AFS version database cli"""
 
 import sys
+import avdb.csdb
 from avdb.subcmd import subcommand, argument, summary, dispatch
 from avdb.model import init_db, Session, Cell, Host
-import avdb.csdb
 
 @subcommand()
 def help(args):
@@ -51,8 +51,7 @@ def init(args):
 
 @subcommand(
     argument('cell', help="cell name"),
-    argument('host', nargs="+", help="database address"),
-    )
+    argument('host', nargs="+", help="database address"))
 def add(args):
     """Add a cell"""
     init_db()
@@ -68,17 +67,19 @@ def edit(args):
     """Change cell info"""
     return 0
 
-@subcommand()
+@subcommand(
+    argument("--all", action="store_true", help="list inactive cells too"))
 def list(args):
     """List cells"""
+    from pprint import pprint
     init_db()
     session = Session()
-    print Cell.list(session)
+    for cell in Cell.cells(session, all=args.all):
+        pprint([cell.name, cell.hosts])
     return 0
 
 @subcommand(
-    argument('csdb', nargs='+', help="url or path to CellServDB file")
-    )
+    argument('csdb', nargs='+', help="url or path to CellServDB file"))
 def import__(args): # Trailing underscores to avoid reserved name 'import'.
     """describe import here"""
     init_db()

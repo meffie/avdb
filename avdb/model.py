@@ -21,7 +21,7 @@
 
 """AFS version database model"""
 
-from sqlalchemy import Column, DateTime, String, Integer, ForeignKey, create_engine
+from sqlalchemy import create_engine, Column, DateTime, String, Integer, ForeignKey, or_
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import UniqueConstraint
@@ -42,10 +42,16 @@ class Cell(Base):
     desc = Column(String(255), default='')
     active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
+    hosts = relationship('Host', backref='cell')
 
     def __repr__(self):
-        return "<Cell(id=%d, name='%s', desc='%s', active=%d, added='%s')>" % \
-               (self.id, self.name, self.desc, self.active, self.added)
+        return "<Cell(" \
+            "id={self.id}, " \
+            "name='{self.name}', " \
+            "desc='{self.desc}', " \
+            "active={self.active}, " \
+            "added='{self.added}')>" \
+            .format(self=self)
 
     @staticmethod
     def add(session, name, **kwargs):
@@ -56,29 +62,33 @@ class Cell(Base):
         return cell
 
     @staticmethod
-    def list(session):
-        return session.query(Cell, Host) \
-            .filter(Cell.active == 1) \
-            .filter(Cell.id == Host.cell_id) \
-            .all()
+    def cells(session, all=False):
+        return session.query(Cell) \
+                .filter(or_(all, Cell.active == 1))
 
 class Host(Base):
     __tablename__ = 'host'
     id = Column(Integer, primary_key=True)
     cell_id = Column(Integer, ForeignKey('cell.id'))
-    cell = relationship(Cell)
     name = Column(String(255))
     address = Column(String(255), unique=True)
     active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
     checked = Column(DateTime)
     replied = Column(DateTime)
+    nodes = relationship('Node', backref='host')
 
     def __repr__(self):
-        return "<Host(id=%d, cell_id=%d, name='%s', address='%s', " \
-               "active=%d, added='%s', checked='%s', replied='%s')>" \
-               % (self.id, self.cell_id, self.name, self.address,
-                  self.active, self.added, self.checked, self.replied)
+        return "<Host(" \
+            "id={self.id}, " \
+            "cell_id={self.cell_id}, " \
+            "name='{self.name}', " \
+            "address='{self.address}', " \
+            "active={self.active}, " \
+            "added={self.added}, " \
+            "checked={self.checked}, " \
+            "replied={self.replied})>" \
+            .format(self=self)
 
     @staticmethod
     def add(session, cell, address, name='', **kwargs):
@@ -88,26 +98,24 @@ class Host(Base):
             session.add(host)
         return host
 
-    @staticmethod
-    def list(session):
-        return session.query(Cell, Host) \
-                .filter(Cell.active == 1) \
-                .filter(Cell.id == Host.cell_id) \
-                .all()
-
 class Node(Base):
     __tablename__ = 'node'
     __table_args__ = (UniqueConstraint('name', 'host_id'),)
     id = Column(Integer, primary_key=True)
     host_id = Column(Integer, ForeignKey('host.id'))
-    host = relationship(Host)
     name = Column(String(255))
     active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
+    versions = relationship('Version', backref='node')
 
     def __repr__(self):
-        return "<Node(id=%d, host_id=%d, name='%s', active=%d, added='%s')>" \
-                % (self.id, self.host_id, self.name, self.active, self.added)
+        return "<Node(" \
+            "id={self.id}, " \
+            "host_id={self.host_id}, " \
+            "name='{self.name}', " \
+            "active={self.active}, " \
+            "added={self.added})>" \
+            .format(self=self)
 
     @staticmethod
     def add(session, host, name, **kwargs):
@@ -117,69 +125,65 @@ class Node(Base):
             session.add(node)
         return node
 
-    @staticmethod
-    def list(session):
-        return session.query(Cell, Host, Node) \
-                .filter(Cell.active == 1) \
-                .filter(Cell.id == Host.cell_id) \
-                .filter(Host.id == Node.host_id) \
-                .all()
-
 class Version(Base):
     __tablename__ = 'version'
     id = Column(Integer, primary_key=True)
     node_id = Column(Integer, ForeignKey('node.id'))
-    node = relationship(Node)
     version = Column(String(255))
     added = Column(DateTime, default=func.now())
 
     def __repr__(self):
-        return "<Version(id=%d, node_id=%d, version='%s', added='%s')>" \
-                % (self.id, self.node_id, self.version, self.added)
+        return "<Version(" \
+            "id={self.id}, " \
+            "node_id={self.node_id}, " \
+            "version='{self.version}', " \
+            "added={self.added})>" \
+            .format(self=self)
 
     @staticmethod
-    def add(session, node, version_string, **kwargs):
-        version = session.query(Version).filter_by(node=node, version=version_string).first()
-        if version is None:
-            version = Version(node=node, version=version_string, **kwargs)
-            session.add(version)
-        return version
+    def add(session, node, version, **kwargs):
+        version_ = session.query(Version).filter_by(node=node, version=version).first()
+        if version_ is None:
+            version_ = Version(node=node, version=version, **kwargs)
+            session.add(version_)
+        return version_
 
-    @staticmethod
-    def list(session):
-        return session.query(Cell, Host, Node, Version) \
-                .filter(Cell.active == 1) \
-                .filter(Cell.id == Host.cell_id) \
-                .filter(Host.id == Node.host_id) \
-                .filter(Node.id == Version.node_id) \
-                .all()
-'''
-def example():
-    from pprint import pprint
-    cellname = 'example.edu'
-    session = Session()
-    cell = Cell.add(session, name=cellname)
-    host = Host.add(session, cell, name='afsdb1', address='1.2.3.4')
-    node0 = Node.add(session, host, name='ptserver')
-    node1 = Node.add(session, host, name='vlserver')
-    node2 = Node.add(session, host, name='foobar', active=0)
-    v0 = Version.add(session, node0, "1.0.0")
-    v1 = Version.add(session, node0, "1.0.1")
-    session.commit()
-    print "cells"; pprint(session.query(Cell).all())
-    print "hosts"; pprint(session.query(Host).all())
-    print "nodes"; pprint(session.query(Node).all())
-    print "active cells"; print Cell.list(session)
-    print "active hosts"; print Host.list(session)
-    print "active nodes"
-    for s in Node.list(session):
-        pprint(s)
-    print "versions"
-    for v in Version.list(session):
-        pprint(v)
 
+# Example data model usage.
 if __name__ == "__main__":
+    from pprint import pprint
     init_db()
-    example()
-'''
+    session = Session()
 
+    cell = Cell.add(session, name='example.edu')
+    for address in ('1.1.1.1', '2.2.2.2', '3.3.3.3'):
+        host = Host.add(session, cell, address=address)
+        for service in ('ptserver', 'vlserver'):
+            node = Node.add(session, host, name=service)
+            for version in ('1.0.0', '1.1.0'):
+                Version.add(session, node, version=version)
+    Cell.add(session, name='bogus.com', active=0)
+    session.commit()
+
+    print "dump tables:"
+    pprint(Cell.cells(session, all=True).all()); print ""
+    pprint(session.query(Host).all()); print ""
+    pprint(session.query(Node).all()); print ""
+    pprint(session.query(Version).all()); print ""
+
+    print "list cells and hosts"
+    for cell in Cell.cells(session, all=True):
+        pprint([cell.name, cell.hosts])
+    print ""
+
+    print "add a version"
+    cell,host,node = session.query(Cell,Host,Node) \
+            .join(Host) \
+            .join(Node) \
+            .filter(Cell.name == 'example.edu') \
+            .filter(Host.address == '2.2.2.2') \
+            .filter(Node.name == 'ptserver') \
+            .one()
+    pprint([node,node.versions])
+    Version.add(session, node=node, version='1.2.0')
+    session.commit()
