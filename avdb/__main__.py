@@ -23,7 +23,7 @@
 import sys
 import avdb.csdb
 from avdb.subcmd import subcommand, argument, summary, dispatch
-from avdb.model import init_db, Session, Cell, Host
+from avdb.model import init_db, Session, Cell, Host, Node
 
 @subcommand()
 def help(args):
@@ -97,7 +97,12 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
 
 @subcommand()
 def scan(args):
-    """describe scan here"""
+    """Scan for versions"""
+    init_db()
+    session = Session()
+    for node in session.query(Node):
+        if node.host.active and node.host.cell.active:
+            print "scanning {node.host.address}:{node.port}".format(node=node)
     return 0
 
 @subcommand()
