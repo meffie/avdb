@@ -21,9 +21,13 @@
 """AFS version database cli"""
 
 import sys
+import logging
 import avdb.csdb
+import avdb.rxdebug
 from avdb.subcmd import subcommand, argument, summary, dispatch
-from avdb.model import init_db, Session, Cell, Host, Node
+from avdb.model import init_db, Session, Cell, Host, Node, Version
+
+log = logging.getLogger(__name__)
 
 @subcommand()
 def help(args):
@@ -75,7 +79,7 @@ def list(args):
     init_db()
     session = Session()
     for cell in Cell.cells(session, all=args.all):
-        pprint([cell.name, cell.hosts])
+        pprint([cell, cell.hosts])
     return 0
 
 @subcommand(
@@ -90,27 +94,45 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
     cells = avdb.csdb.parse("".join(text))
     for cellname,cellinfo in cells.items():
         cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
-        for host in cellinfo['hosts']:
-            Host.add(session, cell=cell, address=host[0], name=host[1])
+        for address,hostname in cellinfo['hosts']:
+            host = Host.add(session, cell=cell, address=address, name=hostname)
+            Node.add(session, host, name='ptserver', port=7002)
+            Node.add(session, host, name='vlserver', port=7003)
     session.commit()
     return 0
 
 @subcommand()
 def scan(args):
     """Scan for versions (not implemented)"""
+    from pprint import pprint
     init_db()
     session = Session()
     for node in session.query(Node):
+        pprint(node)
         if node.host.active and node.host.cell.active:
-            print "scanning {node.host.address}:{node.port}".format(node=node)
+            pprint(node.host)
+            pprint(node.host.cell)
+            log.info("scanning {node.host.address}:{node.port}".format(node=node))
+            version_string = avdb.rxdebug.version(node.host.address, node.port)
+            log.info("v = %s", version_string)
+            if version_string:
+                Version.add(session, node=node, version=version_string)
+                session.commit()
     return 0
 
 @subcommand()
 def report(args):
     """Generate version report (not implemented)"""
+    from pprint import pprint
+    init_db()
+    session = Session()
+    for version in session.query(Version):
+        pprint([version, version.node.host.cell])
     return 0
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+    log.info("in main")
     return dispatch()
 
 if __name__ == '__main__':
