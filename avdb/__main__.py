@@ -55,6 +55,25 @@ def init(args):
     return 0
 
 @subcommand(
+    argument('csdb', nargs='+', help="url or path to CellServDB file"))
+def import__(args): # Trailing underscores to avoid reserved name 'import'.
+    """Import cells from CellServDB files"""
+    init_db()
+    session = Session()
+    text = []
+    for path in args.csdb:
+        text.append(readfile(path))
+    cells = parse("".join(text))
+    for cellname,cellinfo in cells.items():
+        cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
+        for address,hostname in cellinfo['hosts']:
+            host = Host.add(session, cell=cell, address=address, name=hostname)
+            Node.add(session, host, name='ptserver', port=7002)
+            Node.add(session, host, name='vlserver', port=7003)
+    session.commit()
+    return 0
+
+@subcommand(
     argument('cell', help="cell name"),
     argument('host', nargs="+", help="database address"))
 def add(args):
@@ -71,7 +90,7 @@ def add(args):
     argument('cell', help="cell name"),
     argument('-s', '--status', choices=['active', 'inactive'], help="set activation status"))
 def change(args):
-    """Change cell activation status"""
+    """Change cell status"""
     from pprint import pprint
     pprint(args)
     init_db()
@@ -97,25 +116,6 @@ def list(args):
         print "{cell.name} {cell.desc} active={cell.active}".format(cell=cell)
         for host in cell.hosts:
             print "\t{host.name} {host.address}".format(host=host)
-    return 0
-
-@subcommand(
-    argument('csdb', nargs='+', help="url or path to CellServDB file"))
-def import__(args): # Trailing underscores to avoid reserved name 'import'.
-    """Import cell info from CellServDB files"""
-    init_db()
-    session = Session()
-    text = []
-    for path in args.csdb:
-        text.append(readfile(path))
-    cells = parse("".join(text))
-    for cellname,cellinfo in cells.items():
-        cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
-        for address,hostname in cellinfo['hosts']:
-            host = Host.add(session, cell=cell, address=address, name=hostname)
-            Node.add(session, host, name='ptserver', port=7002)
-            Node.add(session, host, name='vlserver', port=7003)
-    session.commit()
     return 0
 
 @subcommand(
