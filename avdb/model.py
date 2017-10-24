@@ -74,8 +74,6 @@ class Host(Base):
     address = Column(String(255), unique=True)
     active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
-    checked = Column(DateTime)
-    replied = Column(DateTime)
     nodes = relationship('Node', backref='host')
 
     def __repr__(self):
