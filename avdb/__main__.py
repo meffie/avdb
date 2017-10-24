@@ -75,19 +75,6 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
 
 @subcommand(
     argument('cell', help="cell name"),
-    argument('host', nargs="+", help="database address"))
-def add(args):
-    """Add a cell"""
-    init_db()
-    session = Session()
-    cell = Cell.add(session, name=args.cell)
-    for host in args.host:
-        Host.add(session, cell, address=host)
-    session.commit()
-    return 0
-
-@subcommand(
-    argument('cell', help="cell name"),
     argument('-s', '--status', choices=['active', 'inactive'], help="set activation status"))
 def change(args):
     """Change cell status"""
