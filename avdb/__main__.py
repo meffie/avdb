@@ -26,9 +26,9 @@ import mpipe
 from sh import rxdebug
 from avdb.subcmd import subcommand, argument, summary, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
+from avdb.csdb import readfile, parse
 
 log = logging.getLogger(__name__)
-
 
 @subcommand()
 def help(args):
@@ -87,7 +87,6 @@ def list(args):
     argument('csdb', nargs='+', help="url or path to CellServDB file"))
 def import__(args): # Trailing underscores to avoid reserved name 'import'.
     """Import cell info from CellServDB files"""
-    from avdb.csdb import readfile, parse
     init_db()
     session = Session()
     text = []
@@ -142,17 +141,21 @@ def scan(args):
 
 @subcommand()
 def report(args):
-    """Generate version report (not implemented)"""
-    from pprint import pprint
+    """Generate version report"""
     init_db()
     session = Session()
+    print "# cell\thost\tnode\tversion"
     for version in session.query(Version):
-        pprint([version, version.node.host.cell])
+        print \
+            "{version.node.host.cell.name}\t" \
+            "{version.node.host.address}\t" \
+            "{version.node.name}\t" \
+            "{version.version}" \
+            .format(version=version)
     return 0
 
 def main():
     logging.basicConfig(level=logging.WARN)
-    log.info("in main")
     return dispatch()
 
 if __name__ == '__main__':
