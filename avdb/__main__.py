@@ -78,8 +78,6 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
     argument('-s', '--status', choices=['active', 'inactive'], help="set activation status"))
 def change(args):
     """Change cell status"""
-    from pprint import pprint
-    pprint(args)
     init_db()
     session = Session()
     cell = session.query(Cell).filter(Cell.name == args.cell).first()
@@ -100,9 +98,9 @@ def list(args):
     init_db()
     session = Session()
     for cell in Cell.cells(session, all=args.all):
-        print "{cell.name} {cell.desc} active={cell.active}".format(cell=cell)
+        print "name:{cell.name} desc:'{cell.desc}' active:{cell.active}".format(cell=cell)
         for host in cell.hosts:
-            print "\t{host.name} {host.address}".format(host=host)
+            print "\thost:{host.name} address:{host.address} active:{host.active}".format(host=host)
     return 0
 
 @subcommand(
