@@ -76,11 +76,12 @@ def edit(args):
     argument("--all", action="store_true", help="list inactive cells too"))
 def list(args):
     """List cells"""
-    from pprint import pprint
     init_db()
     session = Session()
     for cell in Cell.cells(session, all=args.all):
-        pprint([cell, cell.hosts])
+        print "{cell.name} {cell.desc}".format(cell=cell)
+        for host in cell.hosts:
+            print "\t{host.name} {host.address}".format(host=host)
     return 0
 
 @subcommand(
@@ -133,8 +134,8 @@ def scan(args):
 
     for result in pipe.results():
         node_id,version = result
-        node = session.query(Node).filter_by(id=node_id).one()
         if version:
+            node = session.query(Node).filter_by(id=node_id).one()
             Version.add(session, node=node, version=version)
     session.commit()
     return 0
@@ -144,7 +145,6 @@ def report(args):
     """Generate version report"""
     init_db()
     session = Session()
-    print "# cell\thost\tnode\tversion"
     for version in session.query(Version):
         print \
             "{version.node.host.cell.name}\t" \
