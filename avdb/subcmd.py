@@ -58,9 +58,6 @@ def subcommand(*args):
         name = function.__name__.strip('_')
         desc = function.__doc__
         parser = parent.add_parser(name, description=desc)
-        if name not in ('help', 'version'):
-            parser.add_argument("-v", "--verbose", action='store_true', help="print more messages")
-            parser.add_argument("-q", "--quiet", action='store_true', help="print less messages")
         for arg in args:
             name_or_flags,options = arg
             if 'default' in options and 'help' in options:
