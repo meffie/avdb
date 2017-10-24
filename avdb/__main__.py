@@ -28,7 +28,7 @@ from avdb.subcmd import subcommand, argument, summary, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
 from avdb.csdb import readfile, parse
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('avdb')
 
 @subcommand()
 def help(args):
@@ -67,9 +67,24 @@ def add(args):
     session.commit()
     return 0
 
-@subcommand()
-def edit(args):
-    """Change cell info (not implemented)"""
+@subcommand(
+    argument('cell', help="cell name"),
+    argument('-s', '--status', choices=['active', 'inactive'], help="set activation status"))
+def change(args):
+    """Change cell activation status"""
+    from pprint import pprint
+    pprint(args)
+    init_db()
+    session = Session()
+    cell = session.query(Cell).filter(Cell.name == args.cell).first()
+    if cell is None:
+        log.error("cell {args.cell} not found.".format(args=args))
+        return 2
+    if args.status == 'active':
+        cell.active = True
+    elif args.status == 'inactive':
+        cell.active = False
+    session.commit()
     return 0
 
 @subcommand(
@@ -79,7 +94,7 @@ def list(args):
     init_db()
     session = Session()
     for cell in Cell.cells(session, all=args.all):
-        print "{cell.name} {cell.desc}".format(cell=cell)
+        print "{cell.name} {cell.desc} active={cell.active}".format(cell=cell)
         for host in cell.hosts:
             print "\t{host.name} {host.address}".format(host=host)
     return 0
@@ -129,6 +144,7 @@ def scan(args):
     session = Session()
     for node in session.query(Node):
         if node.host.active and node.host.cell.active:
+            log.info("scanning {node.host.address}:{node.port}".format(node=node))
             pipe.put((node.id, node.host.address, node.port))
     pipe.put(None)
 
@@ -136,6 +152,8 @@ def scan(args):
         node_id,version = result
         if version:
             node = session.query(Node).filter_by(id=node_id).one()
+            log.info("got version for {node.host.address}:{node.port} : {version}" \
+                    .format(node=node, version=version))
             Version.add(session, node=node, version=version)
     session.commit()
     return 0
@@ -155,7 +173,7 @@ def report(args):
     return 0
 
 def main():
-    logging.basicConfig(level=logging.WARN)
+    logging.basicConfig(level=logging.INFO)
     return dispatch()
 
 if __name__ == '__main__':
