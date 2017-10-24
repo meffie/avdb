@@ -23,10 +23,12 @@
 import sys
 import logging
 import mpipe
+from sh import rxdebug
 from avdb.subcmd import subcommand, argument, summary, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
 
 log = logging.getLogger(__name__)
+
 
 @subcommand()
 def help(args):
@@ -105,15 +107,22 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
     argument('--nprocs', type=int, default=10, help="number of processes"))
 def scan(args):
     """Scan for versions"""
-    from avdb.rxdebug import get_version
-    import mpipe
 
-    def task(value):
+    def get_version(value):
+        """Get the version string from the remote host."""
         node_id,address,port = value
-        version = get_version(address, port)
+        version = None
+        prefix = "AFS version:"
+        try:
+            output = rxdebug(address, port, '-version')
+            for line in output.stdout.splitlines():
+                if line.startswith(prefix):
+                    version = line.replace(prefix, "").strip()
+        except:
+            log.warn("Unable to reach endpoint %s:%d", address, port)
         return (node_id, version)
 
-    stage = mpipe.UnorderedStage(task, args.nprocs)
+    stage = mpipe.UnorderedStage(get_version, args.nprocs)
     pipe = mpipe.Pipeline(stage)
 
     init_db()
