@@ -63,6 +63,8 @@ def subcommand(*args):
             parser.add_argument("-q", "--quiet", action='store_true', help="print less messages")
         for arg in args:
             name_or_flags,options = arg
+            if 'default' in options and 'help' in options:
+                options['help'] += " (default: {})".format(options['default'])
             parser.add_argument(*name_or_flags, **options)
         parser.set_defaults(function=function)
     return decorator
