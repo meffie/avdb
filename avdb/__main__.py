@@ -22,8 +22,7 @@
 
 import sys
 import logging
-import avdb.csdb
-import avdb.rxdebug
+import mpipe
 from avdb.subcmd import subcommand, argument, summary, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
 
@@ -86,12 +85,13 @@ def list(args):
     argument('csdb', nargs='+', help="url or path to CellServDB file"))
 def import__(args): # Trailing underscores to avoid reserved name 'import'.
     """Import cell info from CellServDB files"""
+    from avdb.csdb import readfile, parse
     init_db()
     session = Session()
     text = []
     for path in args.csdb:
-        text.append(avdb.csdb.readfile(path))
-    cells = avdb.csdb.parse("".join(text))
+        text.append(readfile(path))
+    cells = parse("".join(text))
     for cellname,cellinfo in cells.items():
         cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
         for address,hostname in cellinfo['hosts']:
@@ -101,23 +101,34 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
     session.commit()
     return 0
 
-@subcommand()
+@subcommand(
+    argument('--nprocs', type=int, default=10, help="number of processes"))
 def scan(args):
-    """Scan for versions (not implemented)"""
-    from pprint import pprint
+    """Scan for versions"""
+    from avdb.rxdebug import get_version
+    import mpipe
+
+    def task(value):
+        node_id,address,port = value
+        version = get_version(address, port)
+        return (node_id, version)
+
+    stage = mpipe.UnorderedStage(task, args.nprocs)
+    pipe = mpipe.Pipeline(stage)
+
     init_db()
     session = Session()
     for node in session.query(Node):
-        pprint(node)
         if node.host.active and node.host.cell.active:
-            pprint(node.host)
-            pprint(node.host.cell)
-            log.info("scanning {node.host.address}:{node.port}".format(node=node))
-            version_string = avdb.rxdebug.version(node.host.address, node.port)
-            log.info("v = %s", version_string)
-            if version_string:
-                Version.add(session, node=node, version=version_string)
-                session.commit()
+            pipe.put((node.id, node.host.address, node.port))
+    pipe.put(None)
+
+    for result in pipe.results():
+        node_id,version = result
+        node = session.query(Node).filter_by(id=node_id).one()
+        if version:
+            Version.add(session, node=node, version=version)
+    session.commit()
     return 0
 
 @subcommand()
@@ -131,7 +142,7 @@ def report(args):
     return 0
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.WARN)
     log.info("in main")
     return dispatch()
 
