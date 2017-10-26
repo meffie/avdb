@@ -20,10 +20,11 @@
 
 """AFS version database cli"""
 
-import sys, logging, mpipe, sh
+import sys, os, datetime, logging, mpipe, sh, pystache
 from avdb.subcmd import subcommand, argument, usage, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
 from avdb.csdb import readfile, parse
+from avdb.templates import template
 
 log = logging.getLogger('avdb')
 
@@ -177,7 +178,9 @@ def scan(args):
     session.commit()
     return 0
 
-@subcommand()
+@subcommand(
+    argument('-f', '--format', choices=['csv', 'html'], default='csv', help="output format"),
+    argument('-o', '--output', help="output file"))
 def report(args):
     """Generate version report"""
     init_db()
@@ -187,8 +190,23 @@ def report(args):
                 .join(Node) \
                 .join(Version) \
                 .order_by(Cell.name, Host.address)
+    results = []
     for cell,host,node,version in query:
-        print cell.name, host.address, node.name, version.version
+        results.append({
+            'cell':cell.name,
+            'host':host.address,
+            'node':node.name,
+            'version':version.version,
+            })
+    generated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    context = {'generated':generated, 'results':results}
+    renderer = pystache.Renderer()
+    if args.output:
+        out = open(args.output, 'w')
+    else:
+        out = sys.stdout
+    out.write(renderer.render(template[args.format], context))
+    out.close()
     return 0
 
 def main():
