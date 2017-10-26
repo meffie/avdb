@@ -113,6 +113,9 @@ class Node(Base):
             "added={self.added})>" \
             .format(self=self)
 
+    def cellname(self):
+        return self.host.cell.name
+
     @staticmethod
     def add(session, host, name, **kwargs):
         node = session.query(Node).filter_by(host=host, name=name).first()

@@ -69,43 +69,41 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
     session.commit()
     return 0
 
-#@subcommand(
-#    argument('cell', help="cell name"),
-#    argument('-s', '--status', choices=['active', 'inactive'], help="set activation status"))
-#def change(args):
-#    """Change cell status"""
-#    init_db()
-#    session = Session()
-#    cell = session.query(Cell).filter(Cell.name == args.cell).first()
-#    if cell is None:
-#        log.error("cell {args.cell} not found.".format(args=args))
-#        return 2
-#    if args.status == 'active':
-#        cell.active = True
-#    elif args.status == 'inactive':
-#        cell.active = False
-#    session.commit()
-#    return 0
-
 @subcommand(
-    argument('--all', help="activate all endpoints"),
-    argument('--cell', help="cell name"),
-    argument('--host', help="host address"),
-    argument('--port', help="port number"))
+    argument('--all', action='store_true', help="activate all cells"),
+    argument('--cell', help="cell name"))
 def activate(args):
     """Set activation status"""
-    from pprint import pprint as pp
-    pp(args)
+    init_db()
+    session = Session()
+    count = 0
+    if not (args.all or args.cell):
+        log.error("Specify --all or --cell")
+        return 1
+    query = session.query(Node).filter_by(active=False)
+    for node in query:
+        if args.all or node.cellname() == args.cell:
+            node.active = True
+            count += 1
+    session.commit()
+    log.warn("activated {count} items".format(count=count))
+    return 0
 
 @subcommand(
-    argument('--all', help="activate all endpoints"),
-    argument('--cell', help="cell name"),
-    argument('--host', help="host address"),
-    argument('--port', help="port number"))
+    argument('--cell', required=True, help="cell name"))
 def deactivate(args):
     """Clear activation status"""
-    from pprint import pprint as pp
-    pp(args)
+    init_db()
+    session = Session()
+    count = 0
+    query = session.query(Node).filter_by(active=True)
+    for node in query:
+        if node.cellname() == args.cell:
+            node.active = False
+            count += 1
+    session.commit()
+    log.warn("deactivated {count} items".format(count=count))
+    return 0
 
 @subcommand(
     argument("--all", action="store_true", help="list inactive endpoints too"))
