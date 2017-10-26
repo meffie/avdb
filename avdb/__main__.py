@@ -69,34 +69,54 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
     session.commit()
     return 0
 
-@subcommand(
-    argument('cell', help="cell name"),
-    argument('-s', '--status', choices=['active', 'inactive'], help="set activation status"))
-def change(args):
-    """Change cell status"""
-    init_db()
-    session = Session()
-    cell = session.query(Cell).filter(Cell.name == args.cell).first()
-    if cell is None:
-        log.error("cell {args.cell} not found.".format(args=args))
-        return 2
-    if args.status == 'active':
-        cell.active = True
-    elif args.status == 'inactive':
-        cell.active = False
-    session.commit()
-    return 0
+#@subcommand(
+#    argument('cell', help="cell name"),
+#    argument('-s', '--status', choices=['active', 'inactive'], help="set activation status"))
+#def change(args):
+#    """Change cell status"""
+#    init_db()
+#    session = Session()
+#    cell = session.query(Cell).filter(Cell.name == args.cell).first()
+#    if cell is None:
+#        log.error("cell {args.cell} not found.".format(args=args))
+#        return 2
+#    if args.status == 'active':
+#        cell.active = True
+#    elif args.status == 'inactive':
+#        cell.active = False
+#    session.commit()
+#    return 0
 
 @subcommand(
-    argument("--all", action="store_true", help="list inactive cells too"))
+    argument('--all', help="activate all endpoints"),
+    argument('--cell', help="cell name"),
+    argument('--host', help="host address"),
+    argument('--port', help="port number"))
+def activate(args):
+    """Set activation status"""
+    from pprint import pprint as pp
+    pp(args)
+
+@subcommand(
+    argument('--all', help="activate all endpoints"),
+    argument('--cell', help="cell name"),
+    argument('--host', help="host address"),
+    argument('--port', help="port number"))
+def deactivate(args):
+    """Clear activation status"""
+    from pprint import pprint as pp
+    pp(args)
+
+@subcommand(
+    argument("--all", action="store_true", help="list inactive endpoints too"))
 def list(args):
     """List cells"""
     init_db()
     session = Session()
-    for cell in Cell.cells(session, all=args.all):
-        print "name:{cell.name} desc:'{cell.desc}' active:{cell.active}".format(cell=cell)
+    for cell in Cell.cells(session):
+        print "name:{cell.name} desc:'{cell.desc}'".format(cell=cell)
         for host in cell.hosts:
-            print "\thost:{host.name} address:{host.address} active:{host.active}".format(host=host)
+            print "\thost:{host.name} address:{host.address}".format(host=host)
             for node in host.nodes:
                 print "\t\tnode:{node.name} port:{node.port} active:{node.active}".format(node=node)
     return 0
@@ -131,7 +151,7 @@ def scan(args):
     init_db()
     session = Session()
     for node in session.query(Node):
-        if node.active and node.host.active and node.host.cell.active:
+        if node.active:
             log.info("scanning node {node.host.address}:{node.port} "\
                      "in {node.host.cell.name}".format(node=node))
             pipe.put((node.id, node.host.address, node.port))

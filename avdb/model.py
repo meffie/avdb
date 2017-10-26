@@ -42,7 +42,6 @@ class Cell(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), unique=True)
     desc = Column(String(255), default='')
-    active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
     hosts = relationship('Host', backref='cell')
 
@@ -51,7 +50,6 @@ class Cell(Base):
             "id={self.id}, " \
             "name='{self.name}', " \
             "desc='{self.desc}', " \
-            "active={self.active}, " \
             "added='{self.added}')>" \
             .format(self=self)
 
@@ -65,8 +63,7 @@ class Cell(Base):
 
     @staticmethod
     def cells(session, all=False):
-        return session.query(Cell) \
-                .filter(or_(all, Cell.active == 1))
+        return session.query(Cell)
 
 class Host(Base):
     __tablename__ = 'host'
@@ -74,7 +71,6 @@ class Host(Base):
     cell_id = Column(Integer, ForeignKey('cell.id'))
     name = Column(String(255))
     address = Column(String(255), unique=True)
-    active = Column(Integer, default=1)
     added = Column(DateTime, default=func.now())
     nodes = relationship('Node', backref='host')
 
@@ -84,7 +80,6 @@ class Host(Base):
             "cell_id={self.cell_id}, " \
             "name='{self.name}', " \
             "address='{self.address}', " \
-            "active={self.active}, " \
             "added={self.added}, " \
             "checked={self.checked}, " \
             "replied={self.replied})>" \
@@ -164,13 +159,13 @@ if __name__ == "__main__":
             node = Node.add(session, host, name=name, port=port)
             for version in ('1.0.0', '1.1.0'):
                 Version.add(session, node, version=version)
-    host = Host.add(session, cell, address='0.0.0.0', name='old', active=0)
+    host = Host.add(session, cell, address='0.0.0.0', name='old')
     Node.add(session, host, name='old')
     session.commit()
 
     # add an inactive cell
-    cell = Cell.add(session, name='bogus.com', desc='inactive cell', active=0)
-    host = Host.add(session, cell, address='255.255.255.255', name='deadbeef', active=0)
+    cell = Cell.add(session, name='bogus.com', desc='inactive cell')
+    host = Host.add(session, cell, address='255.255.255.255', name='deadbeef')
     Node.add(session, host, name='beefface')
     session.commit()
 
@@ -200,7 +195,7 @@ if __name__ == "__main__":
 
     print "list nodes"
     for node in session.query(Node):
-        if node.host.active and node.host.cell.active:
+        if node.active:
             print "node"
             pprint(node)
             pprint(node.host)
