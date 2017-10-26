@@ -149,13 +149,13 @@ def report(args):
     """Generate version report"""
     init_db()
     session = Session()
-    for version in session.query(Version):
-        print \
-            "{version.node.host.cell.name}\t" \
-            "{version.node.host.address}\t" \
-            "{version.node.name}\t" \
-            "{version.version}" \
-            .format(version=version)
+    query = session.query(Cell,Host,Node,Version) \
+                .join(Host) \
+                .join(Node) \
+                .join(Version) \
+                .order_by(Cell.name, Host.address)
+    for cell,host,node,version in query:
+        print cell.name, host.address, node.name, version.version
     return 0
 
 def main():
