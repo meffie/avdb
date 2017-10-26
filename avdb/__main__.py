@@ -97,6 +97,8 @@ def list(args):
         print "name:{cell.name} desc:'{cell.desc}' active:{cell.active}".format(cell=cell)
         for host in cell.hosts:
             print "\thost:{host.name} address:{host.address} active:{host.active}".format(host=host)
+            for node in host.nodes:
+                print "\t\tnode:{node.name} port:{node.port} active:{node.active}".format(node=node)
     return 0
 
 @subcommand(
@@ -129,18 +131,26 @@ def scan(args):
     init_db()
     session = Session()
     for node in session.query(Node):
-        if node.host.active and node.host.cell.active:
-            log.info("scanning {node.host.address}:{node.port}".format(node=node))
+        if node.active and node.host.active and node.host.cell.active:
+            log.info("scanning node {node.host.address}:{node.port} "\
+                     "for {node.host.cell.name}".format(node=node))
             pipe.put((node.id, node.host.address, node.port))
+        else:
+            log.info("skipping inactive node {node.host.address}:{node.port} "\
+                     "for {node.host.cell.name}".format(node=node))
     pipe.put(None)
 
     for result in pipe.results():
         node_id,version = result
+        node = session.query(Node).filter_by(id=node_id).one()
         if version:
-            node = session.query(Node).filter_by(id=node_id).one()
             log.info("got version for {node.host.address}:{node.port} : {version}" \
                     .format(node=node, version=version))
             Version.add(session, node=node, version=version)
+        else:
+            log.info("could not get version for {node.host.address}:{node.port}" \
+                    .format(node=node))
+            node.active = 0
     session.commit()
     return 0
 
