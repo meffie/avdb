@@ -9,6 +9,11 @@ setup(
     author_email='mmeffie@sinenomine.net',
     url='https://www.sinenomine.net/',
     packages=['avdb'],
+    install_requires=[
+        'SQLAlchemy',
+        'sh',
+        'mpipe',
+    ],
     entry_points={
         'console_scripts': [
             'avdb = avdb.__main__:main'

@@ -33,10 +33,10 @@ wheel: avdb/__version__.py
 	python setup.py bdist_wheel
 
 install: avdb/__version__.py
-	pip install --upgrade --no-index .
+	pip install --upgrade .
 
 install-user: avdb/__version__.py
-	pip install --user --upgrade --no-index .
+	pip install --user --upgrade .
 
 install-dev: avdb/__version__.py
 	pip install --user -e .
