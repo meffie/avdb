@@ -4,7 +4,7 @@ execfile('avdb/__version__.py')
 setup(
     name='avdb',
     version=VERSION,
-    description='AFS Version Database',
+    description='AFS version tracking database',
     author='Michael Meffie',
     author_email='mmeffie@sinenomine.net',
     url='https://www.sinenomine.net/',
