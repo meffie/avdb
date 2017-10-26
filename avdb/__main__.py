@@ -106,8 +106,7 @@ def deactivate(args):
     log.warn("deactivated {count} items".format(count=count))
     return 0
 
-@subcommand(
-    argument("--all", action="store_true", help="list inactive endpoints too"))
+@subcommand()
 def list(args):
     """List cells"""
     init_db()
