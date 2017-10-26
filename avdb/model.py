@@ -21,6 +21,7 @@
 
 """AFS version database model"""
 
+import os
 from sqlalchemy import create_engine, Column, DateTime, String, Integer, ForeignKey, or_
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -31,7 +32,8 @@ Base = declarative_base()
 Session = sessionmaker()
 
 def init_db():
-    engine = create_engine('sqlite:////tmp/avdb.db')
+    URL = 'sqlite:///{}'.format(os.path.expanduser('~/avdb.db'))
+    engine = create_engine(URL)
     Session.configure(bind=engine)
     Base.metadata.create_all(engine)
 
