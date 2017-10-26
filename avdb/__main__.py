@@ -86,7 +86,7 @@ def activate(args):
             node.active = True
             count += 1
     session.commit()
-    log.warn("activated {count} items".format(count=count))
+    log.info("activated {count} items".format(count=count))
     return 0
 
 @subcommand(
@@ -140,7 +140,7 @@ def scan(args):
                 if line.startswith(prefix):
                     version = line.replace(prefix, "").strip()
         except:
-            log.warn("Unable to reach endpoint %s:%d", address, port)
+            version = None
         return (node_id, version)
 
     stage = mpipe.UnorderedStage(get_version, args.nprocs)
@@ -165,10 +165,15 @@ def scan(args):
             log.info("got version from {node.host.address}:{node.port}: {version}" \
                     .format(node=node, version=version))
             Version.add(session, node=node, version=version)
+            if not node.active:
+                node.active = True
         else:
-            log.info("could not get version from {node.host.address}:{node.port}" \
+            log.warning("could not get version from {node.host.address}:{node.port}" \
                     .format(node=node))
-            node.active = 0
+            if node.active:
+                log.info("deactivating node {node.host.address}:{node.port}" \
+                    .format(node=node))
+                node.active = False
     session.commit()
     return 0
 
