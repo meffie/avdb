@@ -22,7 +22,7 @@
 """AFS version database model"""
 
 import os
-from sqlalchemy import create_engine, Column, DateTime, String, Integer, ForeignKey, or_
+from sqlalchemy import create_engine, Column, DateTime, String, Integer, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import UniqueConstraint
