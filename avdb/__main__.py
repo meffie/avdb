@@ -20,10 +20,7 @@
 
 """AFS version database cli"""
 
-import sys
-import logging
-import mpipe
-from sh import rxdebug
+import sys, logging, mpipe, sh
 from avdb.subcmd import subcommand, argument, usage, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
 from avdb.csdb import readfile, parse
@@ -106,6 +103,11 @@ def list(args):
     argument('--nprocs', type=int, default=10, help="number of processes"))
 def scan(args):
     """Scan for versions"""
+    try:
+        rxdebug = sh.Command('rxdebug')
+    except sh.CommandNotFound:
+        log.error("Unable to find rxdebug")
+        return 1
 
     def get_version(value):
         """Get the version string from the remote host."""
