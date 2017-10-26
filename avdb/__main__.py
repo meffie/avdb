@@ -133,22 +133,22 @@ def scan(args):
     for node in session.query(Node):
         if node.active and node.host.active and node.host.cell.active:
             log.info("scanning node {node.host.address}:{node.port} "\
-                     "for {node.host.cell.name}".format(node=node))
+                     "in {node.host.cell.name}".format(node=node))
             pipe.put((node.id, node.host.address, node.port))
         else:
             log.info("skipping inactive node {node.host.address}:{node.port} "\
-                     "for {node.host.cell.name}".format(node=node))
+                     "in {node.host.cell.name}".format(node=node))
     pipe.put(None)
 
     for result in pipe.results():
         node_id,version = result
         node = session.query(Node).filter_by(id=node_id).one()
         if version:
-            log.info("got version for {node.host.address}:{node.port} : {version}" \
+            log.info("got version from {node.host.address}:{node.port}: {version}" \
                     .format(node=node, version=version))
             Version.add(session, node=node, version=version)
         else:
-            log.info("could not get version for {node.host.address}:{node.port}" \
+            log.info("could not get version from {node.host.address}:{node.port}" \
                     .format(node=node))
             node.active = 0
     session.commit()
