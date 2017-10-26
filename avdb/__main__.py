@@ -24,7 +24,7 @@ import sys
 import logging
 import mpipe
 from sh import rxdebug
-from avdb.subcmd import subcommand, argument, summary, dispatch
+from avdb.subcmd import subcommand, argument, usage, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
 from avdb.csdb import readfile, parse
 
@@ -33,12 +33,11 @@ log = logging.getLogger('avdb')
 @subcommand()
 def help(args):
     """Display help message"""
-    print """avdb [command] [options]
+    usage("""avdb [command] [options]
 
 Scan public AFS servers for version information
 and generate reports.
-"""
-    summary()
+""")
     return 0
 
 @subcommand()
@@ -158,7 +157,6 @@ def report(args):
     return 0
 
 def main():
-    logging.basicConfig(level=logging.INFO)
     return dispatch()
 
 if __name__ == '__main__':

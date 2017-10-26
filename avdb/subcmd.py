@@ -20,7 +20,7 @@
 
 """Create command line subcommands with argparse
 
-This module provides a thin wrapper over the standard library argparse package
+This module provides a thin wrapper over the standard argparse package
 to cleanly create command line subcommands. A decorator turns regular functions
 into cli subcommands. The argument function defines command line options.
 
@@ -47,9 +47,9 @@ Example:
 
 """
 
-import argparse
+import argparse, logging
 
-root = argparse.ArgumentParser(description="afs version database")
+root = argparse.ArgumentParser()
 parent = root.add_subparsers(dest='subcommand')
 
 def subcommand(*args):
@@ -58,6 +58,9 @@ def subcommand(*args):
         name = function.__name__.strip('_')
         desc = function.__doc__
         parser = parent.add_parser(name, description=desc)
+        if name not in ('help', 'version'):
+            parser.add_argument("-v", "--verbose", action='store_true', help="print more messages")
+            parser.add_argument("-q", "--quiet", action='store_true', help="print less messages")
         for arg in args:
             name_or_flags,options = arg
             if 'default' in options and 'help' in options:
@@ -67,21 +70,28 @@ def subcommand(*args):
     return decorator
 
 def argument(*name_or_flags, **options):
-    """Helper to declare subcommand arguments.
-
-    See argparse add_arguments().
-    """
+    """Helper to declare subcommand arguments."""
     return (name_or_flags, options)
 
-def summary():
+def usage(msg):
     """Print a summary of the subcommands."""
-    print "commands:"
+    print "{msg}\ncommands:".format(msg=msg)
     for name,parser in parent.choices.items():
-        print "  %-12s %s" % (name, parser.description)
+        print "  {name:12} {desc}".format(name=name, desc=parser.description)
     return 0
 
 def dispatch():
     """Parse arguments and dispatch subcommand."""
     args = root.parse_args()
+    verbose = getattr(args, 'verbose', False)
+    quiet = getattr(args, 'quiet', False)
+    if verbose and quiet:
+        root.error("Options --verbose and --quiet are exclusive")
+    if quiet:
+        level = logging.ERROR
+    elif verbose:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+    logging.basicConfig(level=level)
     return args.function(args)
-
