@@ -17,7 +17,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'avdb = avdb.__main__:main'
+            'avdb = avdb.main:main'
         ]
     },
 )
