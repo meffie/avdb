@@ -14,6 +14,7 @@ setup(
         'sh',
         'mpipe',
         'pystache',
+        'dnspython',
     ],
     entry_points={
         'console_scripts': [

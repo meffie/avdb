@@ -23,6 +23,7 @@
 
 import re
 import urllib2
+import dns.resolver
 from collections import OrderedDict
 from pprint import pformat
 
@@ -74,3 +75,48 @@ def parse(text):
         cells[name] = {'desc':desc, 'hosts':hosts}
     return cells
 
+def lookup(name):
+    """Query DNS for cell hosts.
+
+    Returns addresses for both AFSDB and SRV records.
+    """
+    hostnames = set()
+    try:
+        answers = dns.resolver.query(name, 'AFSDB')
+        for rdata in answers:
+            hostname = rdata.get_hostname().to_text().strip('.')
+            hostnames.add(hostname)
+    except dns.resolver.NoAnswer:
+        pass
+
+    services = (
+        'afs3-vlserver', # servers providing AFS VLDB services.
+        'afs3-prserver', # servers providing AFS PTS services.
+    )
+    proto = 'udp'
+    for service in services:
+        # The label of a DNS SRV record, as defined in RFC 5864.
+        label = '_{service}._{proto}.{name}' \
+                .format(service=service, proto=proto, name=name)
+        try:
+            answers = dns.resolver.query(label, 'SRV')
+            for rdata in answers:
+                hostname = rdata.target.to_text().strip('.')
+                hostnames.add(hostname)
+        except dns.resolver.NoAnswer:
+            pass
+
+    results = []
+    for hostname in hostnames:
+        addrs = []
+        try:
+            answers = dns.resolver.query(hostname, 'A')
+            for rdata in answers:
+                addr = rdata.to_text().encode('utf-8') # unicode to str
+                addrs.append(addr)
+        except dns.resolver.NoAnswer:
+            pass
+        if addrs:
+            results.append((addrs[0], hostname))
+
+    return results
