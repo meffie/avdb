@@ -23,7 +23,7 @@
 import sys, os, datetime, logging, mpipe, sh, pystache
 from avdb.subcmd import subcommand, argument, usage, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
-from avdb.csdb import readfile, parse
+from avdb.csdb import readfile, parse, lookup
 from avdb.templates import template
 
 log = logging.getLogger('avdb')
@@ -52,21 +52,37 @@ def init(args):
     return 0
 
 @subcommand(
-    argument('csdb', nargs='+', help="url or path to CellServDB file"))
+    argument('--csdb', nargs='+', default=[], help="url or path to CellServDB file"),
+    argument('--name', nargs='+', default=[], help="cellname for dns lookup"))
 def import__(args): # Trailing underscores to avoid reserved name 'import'.
     """Import cells from CellServDB files"""
     init_db()
     session = Session()
-    text = []
-    for path in args.csdb:
-        text.append(readfile(path))
-    cells = parse("".join(text))
-    for cellname,cellinfo in cells.items():
-        cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
-        for address,hostname in cellinfo['hosts']:
-            host = Host.add(session, cell=cell, address=address, name=hostname)
-            Node.add(session, host, name='ptserver', port=7002)
-            Node.add(session, host, name='vlserver', port=7003)
+    if args.csdb:
+        text = []
+        for path in args.csdb:
+            text.append(readfile(path))
+        cells = parse("".join(text))
+        for cellname,cellinfo in cells.items():
+            cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
+            for address,hostname in cellinfo['hosts']:
+                log.info("importing cell %s host %s (%s) from csdb", cellname, hostname, address)
+                host = Host.add(session, cell=cell, address=address, name=hostname)
+                Node.add(session, host, name='ptserver', port=7002)
+                Node.add(session, host, name='vlserver', port=7003)
+            for address,hostname in lookup(cellname):
+                log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
+                host = Host.add(session, cell=cell, address=address, name=hostname)
+                Node.add(session, host, name='ptserver', port=7002)
+                Node.add(session, host, name='vlserver', port=7003)
+    if args.name:
+        for cellname in args.name:
+            cell = Cell.add(session, name=cellname)
+            for address,hostname in lookup(cellname):
+                log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
+                host = Host.add(session, cell=cell, address=address, name=hostname)
+                Node.add(session, host, name='ptserver', port=7002)
+                Node.add(session, host, name='vlserver', port=7003)
     session.commit()
     return 0
 

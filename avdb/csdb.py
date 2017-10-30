@@ -21,6 +21,7 @@
 
 """AFS CellServDB parser"""
 
+import sys
 import re
 import urllib2
 import dns.resolver
@@ -32,6 +33,8 @@ def readfile(path):
     if path.startswith('https://') or path.startswith('http://'):
         response = urllib2.urlopen(path)
         text = response.read()
+    elif path == '-':
+        text = sys.stdin.read()
     else:
         if path.startswith('file://'):
             path = path.replace('file://', '')
@@ -105,6 +108,8 @@ def lookup(name):
                 hostnames.add(hostname)
         except dns.resolver.NoAnswer:
             pass
+        except dns.resolver.NXDOMAIN:
+            pass
 
     results = []
     for hostname in hostnames:
@@ -115,6 +120,8 @@ def lookup(name):
                 addr = rdata.to_text().encode('utf-8') # unicode to str
                 addrs.append(addr)
         except dns.resolver.NoAnswer:
+            pass
+        except dns.resolver.NXDOMAIN:
             pass
         if addrs:
             results.append((addrs[0], hostname))
