@@ -20,6 +20,7 @@
 
 """AFS version database cli"""
 
+from __future__ import print_function
 import sys, os, datetime, logging, mpipe, sh, pystache
 from avdb.subcmd import subcommand, argument, usage, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
@@ -42,7 +43,7 @@ and generate reports.
 def version(args):
     """Print the version number and exit"""
     from avdb import __version__
-    print __version__
+    print(__version__)
     return 0
 
 @subcommand()
@@ -128,11 +129,11 @@ def list(args):
     init_db()
     session = Session()
     for cell in Cell.cells(session):
-        print "name:{cell.name} desc:'{cell.desc}'".format(cell=cell)
+        print("name:{cell.name} desc:'{cell.desc}'".format(cell=cell))
         for host in cell.hosts:
-            print "\thost:{host.name} address:{host.address}".format(host=host)
+            print("\thost:{host.name} address:{host.address}".format(host=host))
             for node in host.nodes:
-                print "\t\tnode:{node.name} port:{node.port} active:{node.active}".format(node=node)
+                print("\t\tnode:{node.name} port:{node.port} active:{node.active}".format(node=node))
     return 0
 
 @subcommand(
@@ -151,10 +152,9 @@ def scan(args):
         version = None
         prefix = "AFS version:"
         try:
-            output = rxdebug(address, port, '-version')
-            for line in output.stdout.splitlines():
+            for line in rxdebug(address, port, '-version'):
                 if line.startswith(prefix):
-                    version = line.replace(prefix, "").strip()
+                    version = line.strip(prefix).strip()
         except:
             version = None
         return (node_id, version)

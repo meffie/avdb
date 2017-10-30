@@ -23,15 +23,19 @@
 
 import sys
 import re
-import urllib2
 import dns.resolver
 from collections import OrderedDict
 from pprint import pformat
 
+try:
+    from urllib.request import urlopen # python3
+except ImportError:
+    from urllib2 import urlopen # python2
+
 def readfile(path):
     """Read a CellServDB file from a url or local path."""
     if path.startswith('https://') or path.startswith('http://'):
-        response = urllib2.urlopen(path)
+        response = urlopen(path)
         text = response.read()
     elif path == '-':
         text = sys.stdin.read()

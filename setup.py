@@ -1,5 +1,5 @@
 from setuptools import setup
-execfile('avdb/__version__.py')
+exec(open('avdb/__version__.py').read())
 
 setup(
     name='avdb',

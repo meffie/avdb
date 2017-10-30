@@ -33,10 +33,10 @@ Example:
         )
     def example(args):
         '''example subcommand'''
-        print "example"
-        print args.host
-        print args.filename
-        print args.output
+        print("example")
+        print(args.host)
+        print(args.filename)
+        print(args.output)
         return 0
 
     dispatch()
@@ -47,6 +47,7 @@ Example:
 
 """
 
+from __future__ import print_function
 import argparse, logging
 
 root = argparse.ArgumentParser()
@@ -75,9 +76,9 @@ def argument(*name_or_flags, **options):
 
 def usage(msg):
     """Print a summary of the subcommands."""
-    print "{msg}\ncommands:".format(msg=msg)
+    print("{msg}\ncommands:".format(msg=msg))
     for name,parser in parent.choices.items():
-        print "  {name:12} {desc}".format(name=name, desc=parser.description)
+        print("  {name:12} {desc}".format(name=name, desc=parser.description))
     return 0
 
 def dispatch():
