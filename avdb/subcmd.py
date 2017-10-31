@@ -95,6 +95,7 @@ def subcommand(*args):
                     options['help'] += " (default: {})".format(options['default'])
             parser.add_argument(*name_or_flags, **options)
         parser.set_defaults(function=function)
+        return function
     return decorator
 
 def argument(*name_or_flags, **options):
