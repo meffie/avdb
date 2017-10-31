@@ -124,7 +124,7 @@ def deactivate(args):
     return 0
 
 @subcommand()
-def list(args):
+def list__(args):
     """List cells"""
     init_db(args.url)
     session = Session()
