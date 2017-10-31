@@ -21,7 +21,7 @@
 """AFS version database cli"""
 
 from __future__ import print_function
-import sys, os, datetime, logging, mpipe, sh, pystache
+import sys, datetime, logging, mpipe, sh, pystache
 from avdb.subcmd import subcommand, argument, usage, dispatch
 from avdb.model import init_db, Session, Cell, Host, Node, Version
 from avdb.csdb import readfile, parse, lookup
