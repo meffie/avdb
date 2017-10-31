@@ -83,7 +83,7 @@ def subcommand(*args):
             log = _get_config('global', 'log', '-')
             parser.add_argument("-v", "--verbose", action='store_true', help="print more messages")
             parser.add_argument("-q", "--quiet", action='store_true', help="print less messages")
-            parser.add_argument("--url", default=url, help="sql connection url (default: {})".format(url))
+            parser.add_argument("--url", default=url, help="sql connection url")
             parser.add_argument("--log", default=log, help="log file (default: {})".format(log))
         for arg in args:
             name_or_flags,options = arg
