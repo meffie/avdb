@@ -49,15 +49,15 @@ def version(args):
 @subcommand()
 def init(args):
     """Create database tables"""
-    init_db()
+    init_db(args.url)
     return 0
 
 @subcommand(
-    argument('--csdb', nargs='+', default=[], help="url or path to CellServDB file"),
-    argument('--name', nargs='+', default=[], help="cellname for dns lookup"))
+    argument('--csdb', nargs='+', help="url or path to CellServDB file"),
+    argument('--name', nargs='+', help="cellname for dns lookup"))
 def import__(args): # Trailing underscores to avoid reserved name 'import'.
     """Import cells from CellServDB files"""
-    init_db()
+    init_db(args.url)
     session = Session()
     if args.csdb:
         text = []
@@ -92,7 +92,7 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
     argument('--cell', help="cell name"))
 def activate(args):
     """Set activation status"""
-    init_db()
+    init_db(args.url)
     session = Session()
     count = 0
     if not (args.all or args.cell):
@@ -111,7 +111,7 @@ def activate(args):
     argument('--cell', required=True, help="cell name"))
 def deactivate(args):
     """Clear activation status"""
-    init_db()
+    init_db(args.url)
     session = Session()
     count = 0
     query = session.query(Node).filter_by(active=True)
@@ -126,7 +126,7 @@ def deactivate(args):
 @subcommand()
 def list(args):
     """List cells"""
-    init_db()
+    init_db(args.url)
     session = Session()
     for cell in Cell.cells(session):
         print("name:{cell.name} desc:'{cell.desc}'".format(cell=cell))
@@ -162,7 +162,7 @@ def scan(args):
     stage = mpipe.UnorderedStage(get_version, args.nprocs)
     pipe = mpipe.Pipeline(stage)
 
-    init_db()
+    init_db(args.url)
     session = Session()
     for node in session.query(Node):
         if node.active:
@@ -198,7 +198,7 @@ def scan(args):
     argument('-o', '--output', help="output file"))
 def report(args):
     """Generate version report"""
-    init_db()
+    init_db(args.url)
     session = Session()
     query = session.query(Cell,Host,Node,Version) \
                 .join(Host) \

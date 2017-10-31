@@ -32,7 +32,7 @@ Example:
         argument("--output", default="example", help="example option"),
         )
     def example(args):
-        '''example subcommand'''
+        'example subcommand'
         print("example")
         print(args.host)
         print(args.filename)
@@ -48,10 +48,29 @@ Example:
 """
 
 from __future__ import print_function
-import argparse, logging
+import argparse, logging, os
+try:
+    from configparser import ConfigParser # python3
+except ImportError:
+    from ConfigParser import ConfigParser # python2
 
 root = argparse.ArgumentParser()
 parent = root.add_subparsers(dest='subcommand')
+config = ConfigParser()
+config.read(['/etc/avdb.ini', os.path.expanduser('~/.avdb.ini')])
+URL = 'sqlite:///{}'.format(os.path.expanduser('~/avdb.db'))
+
+def _long_opt(name_or_flags):
+    for opt in name_or_flags:
+        if opt.startswith('--'):
+            return opt.lstrip('--')
+    return None
+
+def _get_config(section, option, default):
+    if config.has_option(section, option):
+        return config.get(section, option)
+    else:
+        return default
 
 def subcommand(*args):
     """Decorator to declare command line subcommands."""
@@ -60,12 +79,20 @@ def subcommand(*args):
         desc = function.__doc__
         parser = parent.add_parser(name, description=desc)
         if name not in ('help', 'version'):
+            url = _get_config('global', 'url', URL)
+            log = _get_config('global', 'log', '-')
             parser.add_argument("-v", "--verbose", action='store_true', help="print more messages")
             parser.add_argument("-q", "--quiet", action='store_true', help="print less messages")
+            parser.add_argument("--url", default=url, help="sql connection url (default: {})".format(url))
+            parser.add_argument("--log", default=log, help="log file (default: {})".format(log))
         for arg in args:
             name_or_flags,options = arg
-            if 'default' in options and 'help' in options:
-                options['help'] += " (default: {})".format(options['default'])
+            if 'default' in options:
+                opt = _long_opt(name_or_flags)
+                if opt:
+                    options['default'] = _get_config(name, opt, options['default'])
+                if 'help' in options:
+                    options['help'] += " (default: {})".format(options['default'])
             parser.add_argument(*name_or_flags, **options)
         parser.set_defaults(function=function)
     return decorator
@@ -86,13 +113,17 @@ def dispatch():
     args = root.parse_args()
     verbose = getattr(args, 'verbose', False)
     quiet = getattr(args, 'quiet', False)
+    log = getattr(args, 'log', '-')
     if verbose and quiet:
         root.error("Options --verbose and --quiet are exclusive")
+    logopts = {}
     if quiet:
-        level = logging.ERROR
+        logopts['level'] = logging.ERROR
     elif verbose:
-        level = logging.INFO
+        logopts['level'] = logging.INFO
     else:
-        level = logging.WARNING
-    logging.basicConfig(level=level)
+        logopts['level'] = logging.WARNING
+    if log != '-':
+        logopts['filename'] = log
+    logging.basicConfig(**logopts)
     return args.function(args)

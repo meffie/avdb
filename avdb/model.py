@@ -31,9 +31,8 @@ from sqlalchemy.sql import func
 Base = declarative_base()
 Session = sessionmaker()
 
-def init_db():
-    URL = 'sqlite:///{}'.format(os.path.expanduser('~/avdb.db'))
-    engine = create_engine(URL)
+def init_db(url):
+    engine = create_engine(url)
     Session.configure(bind=engine)
     Base.metadata.create_all(engine)
 
