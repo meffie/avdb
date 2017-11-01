@@ -2,10 +2,8 @@ avdb - afs version tracking database
 ====================================
 
 avdb is a tool to run rxdebug in batches to find versions of AFS servers
-running in the wild.  The data is stored in a small sql database. sqlite is
+running in the wild.  The data is stored in a small database. sqlite is
 used by default.
-
-
 
 Installation
 ============
@@ -45,4 +43,49 @@ Scan the hosts with the scan command.::
 List the versions with the report command.::
 
     $ avdb report
+
+Configuration
+=============
+
+avdb command line option defaults can be set by an ini style configuration
+file. The site-wide configuation file is /etc/avdb.ini. The per-user
+configuration file is located at $HOME/.avdb.ini.  The per-user configuration
+file will override options present in the site-wide file, and command-line
+arguments will override the configuration.
+
+The configuration file contains a global section for common options, which
+include the sql url to specify the database connection, and common logging
+options.  Each subcommand has a separate section for specifying defaults
+for the supcommand.
+
+Example configuration file::
+
+    $ cat ~/.avdb.ini
+    [global]
+    url = sqlite:////var/lib/avdb/example.db
+    log = /tmp/avdb.log
+    
+    [scan]
+    nprocs = 10
+    
+    [report]
+    format = html
+    output = /var/www/html/avdb.html
+
+Python scripting
+================
+
+In addition to the command line interface, the avdb module may be imported into
+Python programs and the subcommands may be invoked directly as regular Python
+functions. The subcommand functions have a single trailing underscore, to avoid
+naming conflicts with standard python names, e.g., the function for the import
+subcommand is called import_.
+
+Example::
+
+    import avdb
+    avdb.init_('sqlite:////tmp/example.db')
+    avdb.import_(name='sinenomine.net')
+    avdb.scan_(nprocs=20)
+    avdb.report_(format='html', output='myfile.html')
 
