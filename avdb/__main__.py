@@ -88,37 +88,39 @@ def init_(url=None, admin='root', password=None, **kwargs):
     argument('--name', nargs='+', help="cellname for dns lookup"))
 def import_(csdb=None, name=None, url=None, **kwargs):
     """Import cells from CellServDB files"""
+    if csdb is None:
+        csdb = ()
+    elif type(csdb) is not list and type(csdb) is not tuple:
+        csdb = (csdb,)
+    if name is None:
+        name = ()
+    elif type(name) is not list and type(name) is not tuple:
+        name = (name,)
     init_db(url)
     session = Session()
-    if csdb:
-        if type(csdb) is not list and type(csdb) is not tuple:
-            csdb = (csdb,)
-        text = []
-        for path in csdb:
-            text.append(readfile(path))
-        cells = parse("".join(text))
-        for cellname,cellinfo in cells.items():
-            cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
-            for address,hostname in cellinfo['hosts']:
-                log.info("importing cell %s host %s (%s) from csdb", cellname, hostname, address)
-                host = Host.add(session, cell=cell, address=address, name=hostname)
-                Node.add(session, host, name='ptserver', port=7002)
-                Node.add(session, host, name='vlserver', port=7003)
-            for address,hostname in lookup(cellname):
-                log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
-                host = Host.add(session, cell=cell, address=address, name=hostname)
-                Node.add(session, host, name='ptserver', port=7002)
-                Node.add(session, host, name='vlserver', port=7003)
-    if name:
-        if type(name) is not list and type(name) is not tuple:
-            name = (name,)
-        for cellname in name:
-            cell = Cell.add(session, name=cellname)
-            for address,hostname in lookup(cellname):
-                log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
-                host = Host.add(session, cell=cell, address=address, name=hostname)
-                Node.add(session, host, name='ptserver', port=7002)
-                Node.add(session, host, name='vlserver', port=7003)
+    text = []
+    for path in csdb:
+        text.append(readfile(path))
+    cells = parse("".join(text))
+    for cellname,cellinfo in cells.items():
+        cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
+        for address,hostname in cellinfo['hosts']:
+            log.info("importing cell %s host %s (%s) from csdb", cellname, hostname, address)
+            host = Host.add(session, cell=cell, address=address, name=hostname)
+            Node.add(session, host, name='ptserver', port=7002)
+            Node.add(session, host, name='vlserver', port=7003)
+        for address,hostname in lookup(cellname):
+            log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
+            host = Host.add(session, cell=cell, address=address, name=hostname)
+            Node.add(session, host, name='ptserver', port=7002)
+            Node.add(session, host, name='vlserver', port=7003)
+    for cellname in name:
+        cell = Cell.add(session, name=cellname)
+        for address,hostname in lookup(cellname):
+            log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
+            host = Host.add(session, cell=cell, address=address, name=hostname)
+            Node.add(session, host, name='ptserver', port=7002)
+            Node.add(session, host, name='vlserver', port=7003)
     session.commit()
     return 0
 
