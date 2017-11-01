@@ -95,6 +95,8 @@ def lookup(name):
             hostnames.add(hostname)
     except dns.resolver.NoAnswer:
         pass
+    except dns.resolver.NXDOMAIN:
+        pass
 
     services = (
         'afs3-vlserver', # servers providing AFS VLDB services.

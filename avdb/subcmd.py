@@ -58,15 +58,16 @@ root = argparse.ArgumentParser()
 parent = root.add_subparsers(dest='subcommand')
 config = ConfigParser()
 config.read(['/etc/avdb.ini', os.path.expanduser('~/.avdb.ini')])
-URL = 'sqlite:///{}'.format(os.path.expanduser('~/avdb.db'))
 
 def _long_opt(name_or_flags):
+    """Find the long option name."""
     for opt in name_or_flags:
         if opt.startswith('--'):
             return opt.lstrip('--')
     return None
 
 def _get_config(section, option, default):
+    """Get the config option"""
     if config.has_option(section, option):
         return config.get(section, option)
     else:
@@ -79,7 +80,7 @@ def subcommand(*args):
         desc = function.__doc__
         parser = parent.add_parser(name, description=desc)
         if name not in ('help', 'version'):
-            url = _get_config('global', 'url', URL)
+            url = _get_config('global', 'url', None)
             log = _get_config('global', 'log', '-')
             parser.add_argument("-v", "--verbose", action='store_true', help="print more messages")
             parser.add_argument("-q", "--quiet", action='store_true', help="print less messages")
@@ -112,19 +113,22 @@ def usage(msg):
 def dispatch():
     """Parse arguments and dispatch subcommand."""
     args = root.parse_args()
-    verbose = getattr(args, 'verbose', False)
-    quiet = getattr(args, 'quiet', False)
-    log = getattr(args, 'log', '-')
+    kwargs = vars(args)
+    # Setup logging options.
+    verbose = kwargs.pop('verbose', _get_config('global', 'verbose', False))
+    quiet = kwargs.pop('quiet', _get_config('global', 'quiet', False))
+    log = kwargs.pop('log', None)
     if verbose and quiet:
         root.error("Options --verbose and --quiet are exclusive")
-    logopts = {}
     if quiet:
-        logopts['level'] = logging.ERROR
+        level = logging.ERROR
     elif verbose:
-        logopts['level'] = logging.INFO
+        level = logging.INFO
     else:
-        logopts['level'] = logging.WARNING
-    if log != '-':
-        logopts['filename'] = log
-    logging.basicConfig(**logopts)
-    return args.function(args)
+        level = logging.WARNING
+    if log is None or log == '-':
+        logging.basicConfig(level=level)
+    else:
+        logging.basicConfig(level=level, filename=log)
+    # Run our command.
+    return args.function(**kwargs)

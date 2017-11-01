@@ -30,7 +30,7 @@ from avdb.templates import template
 log = logging.getLogger('avdb')
 
 @subcommand()
-def help(args):
+def help_(**kwargs):
     """Display help message"""
     usage("""avdb [command] [options]
 
@@ -40,28 +40,30 @@ and generate reports.
     return 0
 
 @subcommand()
-def version(args):
+def version_(**kwargs):
     """Print the version number and exit"""
     from avdb import __version__
     print(__version__)
     return 0
 
 @subcommand()
-def init(args):
+def init_(url=None, **kwargs):
     """Create database tables"""
-    init_db(args.url)
+    init_db(url)
     return 0
 
 @subcommand(
     argument('--csdb', nargs='+', help="url or path to CellServDB file"),
     argument('--name', nargs='+', help="cellname for dns lookup"))
-def import__(args): # Trailing underscores to avoid reserved name 'import'.
+def import_(csdb=None, name=None, url=None, **kwargs):
     """Import cells from CellServDB files"""
-    init_db(args.url)
+    init_db(url)
     session = Session()
-    if args.csdb:
+    if csdb:
+        if type(csdb) is not list and type(csdb) is not tuple:
+            csdb = (csdb,)
         text = []
-        for path in args.csdb:
+        for path in csdb:
             text.append(readfile(path))
         cells = parse("".join(text))
         for cellname,cellinfo in cells.items():
@@ -76,8 +78,10 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
                 host = Host.add(session, cell=cell, address=address, name=hostname)
                 Node.add(session, host, name='ptserver', port=7002)
                 Node.add(session, host, name='vlserver', port=7003)
-    if args.name:
-        for cellname in args.name:
+    if name:
+        if type(name) is not list and type(name) is not tuple:
+            name = (name,)
+        for cellname in name:
             cell = Cell.add(session, name=cellname)
             for address,hostname in lookup(cellname):
                 log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
@@ -90,17 +94,17 @@ def import__(args): # Trailing underscores to avoid reserved name 'import'.
 @subcommand(
     argument('--all', action='store_true', help="activate all cells"),
     argument('--cell', help="cell name"))
-def activate(args):
+def activate_(all=False, cell='', url=None, **kwargs):
     """Set activation status"""
-    init_db(args.url)
+    init_db(url)
     session = Session()
     count = 0
-    if not (args.all or args.cell):
+    if not (all or cell):
         log.error("Specify --all or --cell")
         return 1
     query = session.query(Node).filter_by(active=False)
     for node in query:
-        if args.all or node.cellname() == args.cell:
+        if all or node.cellname() == cell:
             node.active = True
             count += 1
     session.commit()
@@ -109,14 +113,14 @@ def activate(args):
 
 @subcommand(
     argument('--cell', required=True, help="cell name"))
-def deactivate(args):
+def deactivate_(cell='', url=None, **kwargs):
     """Clear activation status"""
-    init_db(args.url)
+    init_db(url)
     session = Session()
     count = 0
     query = session.query(Node).filter_by(active=True)
     for node in query:
-        if node.cellname() == args.cell:
+        if node.cellname() == cell:
             node.active = False
             count += 1
     session.commit()
@@ -124,9 +128,9 @@ def deactivate(args):
     return 0
 
 @subcommand()
-def list__(args):
+def list_(url=None, **kwargs):
     """List cells"""
-    init_db(args.url)
+    init_db(url)
     session = Session()
     for cell in Cell.cells(session):
         print("name:{cell.name} desc:'{cell.desc}'".format(cell=cell))
@@ -138,7 +142,7 @@ def list__(args):
 
 @subcommand(
     argument('--nprocs', type=int, default=10, help="number of processes"))
-def scan(args):
+def scan_(nprocs=10, url=None, **kwargs):
     """Scan for versions"""
     try:
         rxdebug = sh.Command('rxdebug')
@@ -159,10 +163,10 @@ def scan(args):
             version = None
         return (node_id, version)
 
-    stage = mpipe.UnorderedStage(get_version, args.nprocs)
+    stage = mpipe.UnorderedStage(get_version, nprocs)
     pipe = mpipe.Pipeline(stage)
 
-    init_db(args.url)
+    init_db(url)
     session = Session()
     for node in session.query(Node):
         if node.active:
@@ -196,9 +200,9 @@ def scan(args):
 @subcommand(
     argument('-f', '--format', choices=['csv', 'html'], default='csv', help="output format"),
     argument('-o', '--output', help="output file"))
-def report(args):
+def report_(format='csv', output=None, url=None, **kwargs):
     """Generate version report"""
-    init_db(args.url)
+    init_db(url)
     session = Session()
     query = session.query(Cell,Host,Node,Version) \
                 .join(Host) \
@@ -216,12 +220,11 @@ def report(args):
     generated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     context = {'generated':generated, 'results':results}
     renderer = pystache.Renderer()
-    if args.output:
-        out = open(args.output, 'w')
+    if output:
+        with open(output, 'w') as out:
+            out.write(renderer.render(template[format], context))
     else:
-        out = sys.stdout
-    out.write(renderer.render(template[args.format], context))
-    out.close()
+        sys.stdout.write(renderer.render(template[format], context))
     return 0
 
 def main():

@@ -21,19 +21,25 @@
 
 """AFS version database model"""
 
+import os
 from sqlalchemy import create_engine, Column, DateTime, String, Integer, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql import func
 
+engine = None
 Base = declarative_base()
 Session = sessionmaker()
 
-def init_db(url):
-    engine = create_engine(url)
-    Session.configure(bind=engine)
-    Base.metadata.create_all(engine)
+def init_db(url=None):
+    global engine
+    if engine is None:
+        if url is None:
+            url = 'sqlite:///{}'.format(os.path.expanduser('~/avdb.db'))
+        engine = create_engine(url)
+        Session.configure(bind=engine)
+        Base.metadata.create_all(engine)
 
 class Cell(Base):
     __tablename__ = 'cell'
