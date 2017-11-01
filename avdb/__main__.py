@@ -21,9 +21,9 @@
 """AFS version database cli"""
 
 from __future__ import print_function
-import sys, datetime, logging, mpipe, sh, pystache
-from avdb.subcmd import subcommand, argument, usage, dispatch
-from avdb.model import init_db, Session, Cell, Host, Node, Version
+import os, sys, datetime, re, logging, mpipe, sh, pystache, avdb
+from avdb.subcmd import subcommand, argument, usage, dispatch, config
+from avdb.model import mysql_create_db, init_db, Session, Cell, Host, Node, Version
 from avdb.csdb import readfile, parse, lookup
 from avdb.templates import template
 
@@ -42,14 +42,45 @@ and generate reports.
 @subcommand()
 def version_(**kwargs):
     """Print the version number and exit"""
-    from avdb import __version__
-    print(__version__)
+    print(avdb.__version__)
     return 0
 
-@subcommand()
-def init_(url=None, **kwargs):
+@subcommand(
+    argument('--admin', default='root', help="database admin username"),
+    argument('--password', help="database admin password"),
+)
+def init_(url=None, admin='root', password=None, **kwargs):
     """Create database tables"""
+    if url is None:
+        return 1
+    # Create the database and tables.
+    if url.startswith('sqlite://'):
+        pass
+    elif url.startswith('mysql://'):
+        if password is None:
+            log.error("mysql admin password is required to create database")
+            return 2
+        m = re.match(r'mysql://([^:]*):([^@]*)@([^/]*)/(.*)', url)
+        if m is None:
+            log.error("Unable to parse url '%s'", url)
+            return 3
+        dbuser,dbpasswd,dbhost,dbname = m.groups()
+        log.info("Creating mysql database '%s' and user '%s'", dbname, dbuser)
+        mysql_create_db(admin, password, dbuser, dbpasswd, dbhost, dbname)
+    else:
+        log.error("Unsupported db type in url '%s'", url)
+        return 4
+    log.info("Creating database tables")
     init_db(url)
+    # Save our url in the ini file, if not already there.
+    if not config.has_option('global', 'url') or config.get('global', 'url') != url:
+        if not config.has_section('global'):
+            config.add_section('global')
+        config.set('global', 'url', url)
+        inifile = os.path.expanduser('~/.avdb.ini')
+        log.info("Saving database connection url in file '%s'", inifile)
+        with open(inifile, 'w') as f:
+            config.write(f)
     return 0
 
 @subcommand(

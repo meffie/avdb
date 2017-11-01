@@ -32,6 +32,15 @@ engine = None
 Base = declarative_base()
 Session = sessionmaker()
 
+def mysql_create_db(admin, password, dbuser, dbpasswd, dbhost, dbname):
+    """Create the mysql database and user."""
+    db = create_engine("mysql://{admin}:{password}@{dbhost}".format(**locals()))
+    db.execute("CREATE DATABASE {dbname}".format(**locals()))
+    db.execute("CREATE USER '{dbuser}'@'localhost' IDENTIFIED BY '{dbpasswd}'".format(**locals()))
+    db.execute("CREATE USER '{dbuser}'@'%%' IDENTIFIED BY '{dbpasswd}'".format(**locals()))
+    db.execute("GRANT ALL PRIVILEGES ON {dbname}.* TO '{dbuser}'@'localhost' WITH GRANT OPTION".format(**locals()))
+    db.execute("FLUSH PRIVILEGES")
+
 def init_db(url=None):
     global engine
     if engine is None:
