@@ -103,6 +103,8 @@ def import_(csdb=None, name=None, url=None, **kwargs):
         text.append(readfile(path))
     cells = parse("".join(text))
     for cellname,cellinfo in cells.items():
+        if cellname == 'dynroot':
+            continue  # skip the synthetic cellname
         cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
         for address,hostname in cellinfo['hosts']:
             log.info("importing cell %s host %s (%s) from csdb", cellname, hostname, address)
@@ -115,6 +117,8 @@ def import_(csdb=None, name=None, url=None, **kwargs):
             Node.add(session, host, name='ptserver', port=7002)
             Node.add(session, host, name='vlserver', port=7003)
     for cellname in name:
+        if cellname == 'dynroot':
+            continue  # skip the synthetic cellname
         cell = Cell.add(session, name=cellname)
         for address,hostname in lookup(cellname):
             log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
