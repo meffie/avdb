@@ -35,7 +35,7 @@ To create an sqlite database::
 
 To create a mysql database::
 
-    $ avdb init --url mysql://<user>@<secret>/<hostname>/avdb \
+    $ avdb init --url mysql://<user>:<secret>@<hostname>/avdb \
                 --admin <mysql-admin-user> \
                 --password <mysql-admin-password>
 
