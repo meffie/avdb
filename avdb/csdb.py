@@ -21,8 +21,7 @@
 
 """AFS CellServDB parser"""
 
-import sys
-import re
+import sys, logging, re
 import dns.resolver
 from collections import OrderedDict
 from pprint import pformat
@@ -31,6 +30,8 @@ try:
     from urllib.request import urlopen # python3
 except ImportError:
     from urllib2 import urlopen # python2
+
+log = logging.getLogger('avdb')
 
 def readfile(path):
     """Read a CellServDB file from a url or local path."""
@@ -93,10 +94,8 @@ def lookup(name):
         for rdata in answers:
             hostname = rdata.get_hostname().to_text().strip('.')
             hostnames.add(hostname)
-    except dns.resolver.NoAnswer:
-        pass
-    except dns.resolver.NXDOMAIN:
-        pass
+    except Exception as e:
+        log.warning("DNS query failed: %s", e)
 
     services = (
         'afs3-vlserver', # servers providing AFS VLDB services.
@@ -112,10 +111,8 @@ def lookup(name):
             for rdata in answers:
                 hostname = rdata.target.to_text().strip('.')
                 hostnames.add(hostname)
-        except dns.resolver.NoAnswer:
-            pass
-        except dns.resolver.NXDOMAIN:
-            pass
+        except Exception as e:
+            log.warning("DNS query failed: %s", e)
 
     results = []
     for hostname in hostnames:
@@ -125,10 +122,8 @@ def lookup(name):
             for rdata in answers:
                 addr = rdata.to_text().encode('utf-8') # unicode to str
                 addrs.append(addr)
-        except dns.resolver.NoAnswer:
-            pass
-        except dns.resolver.NXDOMAIN:
-            pass
+        except Exception as e:
+            log.warning("DNS query failed: %s", e)
         if addrs:
             results.append((addrs[0], hostname))
 

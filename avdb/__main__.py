@@ -21,7 +21,8 @@
 """AFS version database cli"""
 
 from __future__ import print_function
-import os, sys, datetime, re, logging, mpipe, sh, pystache, avdb
+import os, sys, datetime, re, logging, mpipe, pystache, avdb
+from sh import rxdebug
 from avdb.subcmd import subcommand, argument, usage, dispatch, config
 from avdb.model import mysql_create_db, init_db, Session, Cell, Host, Node, Version
 from avdb.csdb import readfile, parse, lookup
@@ -84,44 +85,45 @@ def init_(url=None, admin='root', password=None, **kwargs):
     return 0
 
 @subcommand(
-    argument('--csdb', nargs='+', help="url or path to CellServDB file"),
-    argument('--name', nargs='+', help="cellname for dns lookup"))
+    argument('cell', help="cellname"),
+    argument('--desc', help="description"))
+def add_(cell=None, desc=None, url=None, **kwargs):
+    """Add a cell name to be scanned."""
+    if cell is None:
+        log.error("Missing cell argument")
+        return 1
+    init_db(url)
+    session = Session()
+    if cell == 'dynroot':
+        log.warning("Ignoring dynroot cell name")
+    else:
+        Cell.add(session, name=cell, desc=desc)
+    session.commit()
+    return 0
+
+@subcommand(
+    argument('csdb', nargs='+', help="url or path to CellServDB file"))
 def import_(csdb=None, name=None, url=None, **kwargs):
     """Import cells from CellServDB files"""
     if csdb is None:
         csdb = ()
     elif type(csdb) is not list and type(csdb) is not tuple:
         csdb = (csdb,)
-    if name is None:
-        name = ()
-    elif type(name) is not list and type(name) is not tuple:
-        name = (name,)
+
     init_db(url)
     session = Session()
+
     text = []
     for path in csdb:
         text.append(readfile(path))
     cells = parse("".join(text))
+
     for cellname,cellinfo in cells.items():
         if cellname == 'dynroot':
             continue  # skip the synthetic cellname
         cell = Cell.add(session, name=cellname, desc=cellinfo['desc'])
         for address,hostname in cellinfo['hosts']:
             log.info("importing cell %s host %s (%s) from csdb", cellname, hostname, address)
-            host = Host.add(session, cell=cell, address=address, name=hostname)
-            Node.add(session, host, name='ptserver', port=7002)
-            Node.add(session, host, name='vlserver', port=7003)
-        for address,hostname in lookup(cellname):
-            log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
-            host = Host.add(session, cell=cell, address=address, name=hostname)
-            Node.add(session, host, name='ptserver', port=7002)
-            Node.add(session, host, name='vlserver', port=7003)
-    for cellname in name:
-        if cellname == 'dynroot':
-            continue  # skip the synthetic cellname
-        cell = Cell.add(session, name=cellname)
-        for address,hostname in lookup(cellname):
-            log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
             host = Host.add(session, cell=cell, address=address, name=hostname)
             Node.add(session, host, name='ptserver', port=7002)
             Node.add(session, host, name='vlserver', port=7003)
@@ -181,11 +183,12 @@ def list_(url=None, **kwargs):
     argument('--nprocs', type=int, default=10, help="number of processes"))
 def scan_(nprocs=10, url=None, **kwargs):
     """Scan for versions"""
-    try:
-        rxdebug = sh.Command('rxdebug')
-    except sh.CommandNotFound:
-        log.error("Unable to find rxdebug")
-        return 1
+    init_db(url)
+    session = Session()
+
+    def lookup_cell(cellname):
+        cellinfo = lookup(cellname)
+        return (cellname, cellinfo)
 
     def get_version(value):
         """Get the version string from the remote host."""
@@ -200,11 +203,26 @@ def scan_(nprocs=10, url=None, **kwargs):
             version = None
         return (node_id, version)
 
+    stage = mpipe.UnorderedStage(lookup_cell, nprocs)
+    pipe = mpipe.Pipeline(stage)
+    for cell in Cell.cells(session):
+        log.info("looking up hosts for cell %s", cell.name)
+        pipe.put(cell.name)
+    pipe.put(None)
+
+    for result in pipe.results():
+        cellname,cellinfo = result
+        cell = Cell.add(session, name=cellname)
+        for address,hostname in cellinfo:
+            log.info("importing cell %s host %s (%s) from dns", cellname, hostname, address)
+            host = Host.add(session, cell=cell, address=address, name=hostname)
+            Node.add(session, host, name='ptserver', port=7002)
+            Node.add(session, host, name='vlserver', port=7003)
+    session.commit()
+
     stage = mpipe.UnorderedStage(get_version, nprocs)
     pipe = mpipe.Pipeline(stage)
 
-    init_db(url)
-    session = Session()
     for node in session.query(Node):
         if node.active:
             log.info("scanning node {node.host.address}:{node.port} "\
