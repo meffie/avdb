@@ -19,7 +19,7 @@ avdb/__version__.py:
 	echo "VERSION = '$$(git describe --tags | sed 's/^v//')'" > avdb/__version__.py
 
 lint:
-	pyflakes avdb/*.py
+	pyflakes avdb/*.py example/*.py
 
 test:
 	#python -m test.test_<name> -v
