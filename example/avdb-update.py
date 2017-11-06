@@ -38,16 +38,13 @@ def items(soup, id_):
 
 def main():
     level = logging.INFO if cfg('verbose') else logging.WARNING
-    logging.basicConfig(filename=cfg('log'), level=level)
+    fmt = '%(asctime)s %(levelname)-8s %(message)s'
+    logging.basicConfig(filename=cfg('log'), level=level, format=fmt)
     log = logging.getLogger()
 
     avdb.model.init_db(cfg('url'))
 
-    try:
-        html = urlopen(sys.argv[1]).read()
-    except IndexError:
-        sys.stderr.write("usage: update <url>\n")
-        return 1
+    html = urlopen(cfg('doc')).read()
     soup = BeautifulSoup(html, 'html.parser')
     for cellservdb in items(soup, 'cellservdbs'):
         log.info("importing celservdb %s", cellservdb)
@@ -68,4 +65,8 @@ def main():
     avdb.report_(format='csv', output='/var/www/html/avdb/avdb.csv')
     log.info("done")
 
-main()
+try:
+    main()
+except:
+    logging.exception('Got exception on main handler')
+    raise
