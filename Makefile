@@ -33,6 +33,7 @@ wheel: avdb/__version__.py
 	python setup.py bdist_wheel
 
 install: avdb/__version__.py
+	PIP_INDEX_URL=https://pypi.python.org/simple/ \
 	pip install --upgrade .
 
 install-user: avdb/__version__.py

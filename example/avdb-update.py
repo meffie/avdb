@@ -1,3 +1,5 @@
+#!/usr/bin/python
+#
 # Copyright (c) 2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,10 +51,11 @@ def main():
     soup = BeautifulSoup(html, 'html.parser')
     for cellservdb in items(soup, 'cellservdbs'):
         log.info("importing celservdb %s", cellservdb)
-        log.info("cellservdb %s", cellservdb)
+        avdb.import_(cellservdb)
     for client in items(soup, 'clients'):
         log.info("importing cmdebug %s -cellservdb", client)
-        avdb.import_(cmdebug(client, cellservdb=True), '-')
+        cmdebug(client, cellservdb=True, _out='/tmp/avdb.csdb')
+        avdb.import_('/tmp/avdb.csdb')
     for cellname in items(soup, 'cellnames'):
         log.info("adding cellname %s", cellname)
         avdb.add_(cell=cellname)
@@ -63,5 +66,6 @@ def main():
     log.info("writing report")
     avdb.report_(format='html', output='/var/www/html/avdb/index.html')
     avdb.report_(format='csv', output='/var/www/html/avdb/avdb.csv')
+    log.info("done")
 
 main()
