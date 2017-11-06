@@ -37,24 +37,24 @@ def items(soup, id_):
     return [li.text.strip() for li in soup.find('div', id=id_).find_all('li')]
 
 def main():
-    level = logging.INFO if cfg('verbose') else logging.WARNING
-    fmt = '%(asctime)s %(levelname)-8s %(message)s'
-    logging.basicConfig(filename=cfg('log'), level=level, format=fmt)
-    log = logging.getLogger()
+    fmt = '%(asctime)s %(levelname)s %(message)s'
+    logging.basicConfig(filename=cfg('log'), level=logging.WARNING, format=fmt)
+    log = logging.getLogger('update')
+    log.setLevel(logging.INFO)
 
     avdb.model.init_db(cfg('url'))
 
     html = urlopen(cfg('doc')).read()
     soup = BeautifulSoup(html, 'html.parser')
     for cellservdb in items(soup, 'cellservdbs'):
-        log.info("importing celservdb %s", cellservdb)
+        log.info("importing %s", cellservdb)
         avdb.import_(cellservdb)
     for client in items(soup, 'clients'):
         log.info("importing cmdebug %s -cellservdb", client)
         cmdebug(client, cellservdb=True, _out='/tmp/avdb.csdb')
         avdb.import_('/tmp/avdb.csdb')
     for cellname in items(soup, 'cellnames'):
-        log.info("adding cellname %s", cellname)
+        log.info("adding %s", cellname)
         avdb.add_(cell=cellname)
 
     log.info("starting scan")
