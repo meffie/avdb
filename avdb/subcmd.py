@@ -129,6 +129,7 @@ def dispatch():
     if log is None or log == '-':
         logging.basicConfig(level=level)
     else:
-        logging.basicConfig(level=level, filename=log)
+        fmt = '%(asctime)s %(levelname)s %(message)s'
+        logging.basicConfig(level=level, filename=log, format=fmt)
     # Run our command.
     return args.function(**kwargs)
