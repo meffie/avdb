@@ -198,7 +198,7 @@ def scan_(nprocs=10, url=None, **kwargs):
         try:
             for line in rxdebug(address, port, '-version'):
                 if line.startswith(prefix):
-                    version = line.strip(prefix).strip()
+                    version = line.replace(prefix,'').strip()
         except:
             version = None
         return (node_id, version)
