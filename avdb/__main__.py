@@ -266,12 +266,7 @@ def report_(format='csv', output=None, url=None, **kwargs):
                 .order_by(Cell.name, Host.address)
     results = []
     for cell,host,node,version in query:
-        results.append({
-            'cell':cell.name,
-            'host':host.address,
-            'node':node.name,
-            'version':version.version,
-            })
+        results.append({'cell':cell, 'host':host, 'node':node, 'version':version})
     generated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     context = {'generated':generated, 'results':results}
     renderer = pystache.Renderer()
