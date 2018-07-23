@@ -94,8 +94,6 @@ class Host(Base):
             "name='{self.name}', " \
             "address='{self.address}', " \
             "added={self.added}, " \
-            "checked={self.checked}, " \
-            "replied={self.replied})>" \
             .format(self=self)
 
     @staticmethod
