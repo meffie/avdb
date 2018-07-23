@@ -27,6 +27,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql import func
+from pprint import pformat
 
 engine = None
 Base = declarative_base()
@@ -139,8 +140,16 @@ class Version(Base):
     __tablename__ = 'version'
     id = Column(Integer, primary_key=True)
     node_id = Column(Integer, ForeignKey('node.id'))
-    version = Column(String(255))
+    _version = Column('version', String(255))
     added = Column(DateTime, default=func.now())
+
+    @property
+    def version(self):
+        return pformat(self._version).strip("'") # flatten to ascii
+
+    @version.setter
+    def version(self, version):
+        self._version = version
 
     def __repr__(self):
         return "<Version(" \
