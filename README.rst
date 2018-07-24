@@ -14,10 +14,13 @@ only OpenAFS program used by avdb. A cache manager is not required.
 
 A makefile is provided with avdb to facilate development and installation from
 a git checkout.  The avdb package can be installed directly from a git checkout
-with the 'install' or the 'install-user' target::
+with the 'install-user' target::
 
-    $ sudo make install      # ... site-wide installation
-    $ make install-user      # ... alternative, non-root install
+    $ make install-user
+
+or for site-wide installation::
+
+    $ sudo make install
 
 The 'package' target may be used to create packages to be uploaded to a pip
 repository.::
@@ -27,7 +30,7 @@ repository.::
 After the avdb package is installed, the 'avdb init' subcommand may be used to
 create the database and tables.  Provide a connection url to specify the
 database type and the connection crediations.  The connection url will be saved
-in the avdb config file ~/.avdb.ini.::
+in the avdb config file ~/.avdb.ini.
 
 To create an sqlite database::
 
@@ -92,7 +95,7 @@ In addition to the command line interface, the avdb module may be imported into
 Python programs. This allows the avdb subcommands to be invoked directly as
 regular Python functions. All of the subcommand functions have a single
 trailing underscore to avoid naming conflicts with standard python names. For
-example, function for the import subcommand is called import_.
+example, function for the import subcommand is called `import_`.
 
 The database connection url must be set once before calling avdb subcommand
 functions. Use the 'avdb.model.init_db()' function to set the connection url.
