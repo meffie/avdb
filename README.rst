@@ -1,20 +1,21 @@
-avdb - afs version tracking database
+avdb - AFS version tracking database
 ====================================
 
-avdb is a tool to run rxdebug in batches to find versions of AFS servers
-running in the wild.  The data is stored in a small database. Currently
-configuration support is provided for sqlite and mysql.
+``avdb`` runs the OpenAFS ``rxdebug`` command in batches to find versions of
+AFS servers running in the wild.  The data is stored in a small database.
+Sqlite and mysql databases are currently supported.
 
 Installation
 ============
 
-Before installing avdb, install the OpenAFS rxdebug command. This may be
-installed from packages or from building from source. Currently rxdebug is the
-only OpenAFS program used by avdb. A cache manager is not required.
+Install the OpenAFS ``rxdebug`` command before installing ``avdb``.  The
+``rxdebug`` command may be installed from packages or from building the OpenAFS
+user-space packages from source. ``rxdebug`` is the only OpenAFS program used
+by avdb at this time. A cache manager (OpenAFS client) is not required.
 
-A makefile is provided with avdb to facilate development and installation from
-a git checkout.  The avdb package can be installed directly from a git checkout
-with the 'install-user' target::
+A makefile is provided with ``avdb`` to facilate development and installation
+from a git checkout.  The avdb package can be installed directly from a git
+checkout with the ``install-user`` target::
 
     $ make install-user
 
@@ -22,15 +23,10 @@ or for site-wide installation::
 
     $ sudo make install
 
-The 'package' target may be used to create packages to be uploaded to a pip
-repository.::
-
-    $ make package
-
-After the avdb package is installed, the 'avdb init' subcommand may be used to
-create the database and tables.  Provide a connection url to specify the
-database type and the connection crediations.  The connection url will be saved
-in the avdb config file ~/.avdb.ini.
+Next, run the ``avdb init`` subcommand to create the database and tables.
+Provide a connection url on the command line to specify the database type and
+the connection credentials.  The connection url will be saved in the avdb
+config file ``~/.avdb.ini`` for subsequent invocations of ``avdb``.
 
 To create an sqlite database::
 
@@ -42,8 +38,8 @@ To create a mysql database::
                 --admin <mysql-admin-user> \
                 --password <mysql-admin-password>
 
-Usage
-=====
+Example usage
+=============
 
 Import the list of cells to be scanned with the 'import' subcommand.::
 
@@ -64,10 +60,10 @@ Configuration
 =============
 
 avdb command line option defaults may be set by an ini style configuration
-file. The site-wide configuation file is /etc/avdb.ini. The per-user
-configuration file is located at $HOME/.avdb.ini.  The per-user configuration
-file will override options present in the site-wide file, and command-line
-arguments will override the values in the configuration files.
+file. The site-wide configuation file is ``/etc/avdb.ini``, and the per-user
+configuration file is located at ``$HOME/.avdb.ini``.  The per-user
+configuration file will override options present in the site-wide file, and
+command-line arguments will override the values in the configuration files.
 
 The configuration file contains a global section for common options, which
 includes the sql url to specify the database connection and common logging
@@ -95,12 +91,13 @@ In addition to the command line interface, the avdb module may be imported into
 Python programs. This allows the avdb subcommands to be invoked directly as
 regular Python functions. All of the subcommand functions have a single
 trailing underscore to avoid naming conflicts with standard python names. For
-example, function for the import subcommand is called `import_`.
+example, function for the import subcommand is called ``import_``.
 
 The database connection url must be set once before calling avdb subcommand
-functions. Use the 'avdb.model.init_db()' function to set the connection url.
+functions. Use the ``avdb.model.init_db()`` function to set the connection url.
 
-The avdb config parser object, if needed, is available as 'avdb.subcmd.config'.
+The avdb config parser object, if needed, is available as
+``avdb.subcmd.config``.
 
 Example::
 
