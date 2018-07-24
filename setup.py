@@ -5,6 +5,7 @@ setup(
     name='avdb',
     version=VERSION,
     description='AFS version tracking database',
+    long_description=open('README.rst').read(),
     author='Michael Meffie',
     author_email='mmeffie@sinenomine.net',
     url='https://www.sinenomine.net/',
