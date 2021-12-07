@@ -23,6 +23,7 @@
 
 import sys, logging, re
 import dns.resolver
+import six
 from collections import OrderedDict
 from pprint import pformat
 
@@ -45,6 +46,7 @@ def readfile(path):
             path = path.replace('file://', '')
         with open(path, 'r') as f:
             text = f.read()
+    text = six.ensure_text(text, encoding='utf-8', errors='replace')
     return text
 
 def parse(text):

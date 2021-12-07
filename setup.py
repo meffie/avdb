@@ -12,6 +12,7 @@ setup(
     packages=['avdb'],
     install_requires=[
         'SQLAlchemy',
+        'six',
         'sh',
         'mpipe',
         'pystache',
