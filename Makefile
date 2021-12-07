@@ -27,23 +27,23 @@ test:
 package: sdist wheel
 
 sdist: avdb/__version__.py
-	python setup.py sdist
+	python3 setup.py sdist
 
 wheel: avdb/__version__.py
-	python setup.py bdist_wheel
+	python3 setup.py bdist_wheel
 
 install: avdb/__version__.py
 	PIP_INDEX_URL=https://pypi.python.org/simple/ \
-	pip install --upgrade .
+	pip3 install --upgrade .
 
 install-user: avdb/__version__.py
-	pip install --user --upgrade .
+	pip3 install --user --upgrade .
 
 install-dev: avdb/__version__.py
-	pip install --user -e .
+	pip3 install --user -e .
 
 remove:
-	pip uninstall -y avdb
+	pip3 uninstall -y avdb
 
 clean:
 	-rm -f *.pyc test/*.pyc avdb/*.pyc avdb/__version__.py
