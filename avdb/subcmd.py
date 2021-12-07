@@ -132,4 +132,9 @@ def dispatch():
         fmt = '%(asctime)s %(levelname)s %(message)s'
         logging.basicConfig(level=level, filename=log, format=fmt)
     # Run our command.
-    return args.function(**kwargs)
+    if args.subcommand:
+        rc = args.function(**kwargs)
+    else:
+        usage('')
+        rc = 1
+    return rc
