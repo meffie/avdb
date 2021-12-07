@@ -259,11 +259,11 @@ def report_(format='csv', output=None, url=None, **kwargs):
     """Generate version report"""
     init_db(url)
     session = Session()
-    query = session.query(Cell,Host,Node,Version) \
-                .join(Host) \
-                .join(Node) \
-                .join(Version) \
-                .order_by(Cell.name, Host.address)
+    query = session.query(Cell, Host, Node, Version).\
+        filter(Cell.id == Host.cell_id).\
+        filter(Host.id == Node.host_id).\
+        filter(Node.id == Version.node_id).\
+        order_by(Cell.name, Host.address)
     results = []
     for cell,host,node,version in query:
         results.append({'cell':cell, 'host':host, 'node':node, 'version':version})
